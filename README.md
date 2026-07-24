@@ -1,0 +1,106 @@
+# Reverb J
+
+Reverb J is a separate compact UI option for Reverb scripts. Its internal name is
+not shown to players. It is independent from the main `ReverbUI` library and is
+designed for low screen usage, touch support, low complexity, and beginner-friendly
+Lua.
+
+## Runtime
+
+```lua
+local ReverbJ = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/rbxreverb/ReverbJ/refs/heads/main/source.lua"
+))()
+```
+
+The repository URL is a planned hosting location. Until that repository exists,
+load the local `source.lua` through the development workflow.
+
+The floating launcher loads the existing Reverb logo once and caches it locally.
+`ReverbJ:SetLogo(assetId)` can override it later if a dedicated Roblox asset is
+uploaded.
+
+## Basic usage
+
+```lua
+local UI = ReverbJ:CreateWindow({
+    Game = "My Game",
+    Tier = "FREE",
+})
+
+local Main = UI:Tab("Main")
+
+Main:Toggle("Auto Farm", false, function(enabled)
+    print(enabled)
+end, "AutoFarm")
+```
+
+The visible title is always formatted as:
+
+```text
+My Game by Reverb [FREE]
+```
+
+Set `Tier = "PREMIUM"` for premium users. If omitted, the library checks the
+current Reverb loader fields, including `Shared_LRM_UserNote`, and otherwise
+safely defaults to `FREE`.
+
+## Controls
+
+```lua
+local section = Main:Section("Section name", false) -- second value starts collapsed
+
+section:Button("Run", function() end)
+section:Toggle("Enabled", false, function(value) end, "EnabledFlag")
+section:Slider("Amount", 0, 100, 50, function(value) end, "AmountFlag")
+section:Dropdown("Mode", {"A", "B"}, "A", function(value) end, "ModeFlag")
+section:Input("Name", "Type here", function(value) end, "NameFlag")
+section:Keybind("Action", "Q", function() end, "ActionBind")
+section:Label("Small supporting text")
+section:Paragraph("Heading", "Longer information text.")
+section:Divider()
+```
+
+Flags are optional. Add them to controls whose values should be eligible for the
+opt-in remember feature.
+
+## Remember settings
+
+Saving is intentionally off by default:
+
+```lua
+local UI = ReverbJ:CreateWindow({
+    Game = "My Game",
+    RememberSettings = false,
+    ConfigName = "MyGame",
+})
+
+Settings:Toggle("Remember active settings", false, function(enabled)
+    UI:SetRememberSettings(enabled)
+end)
+```
+
+When enabled, supported flagged controls are stored using the executor filesystem.
+Nothing is written while remembering is disabled.
+
+## Multiple windows
+
+Call `CreateWindow` again. Every window may have its own tabs and can be dragged
+independently. The floating Reverb logo hides or shows all windows together.
+
+```lua
+local Tools = ReverbJ:CreateWindow({
+    Game = "My Game Tools",
+    Tier = "FREE",
+})
+```
+
+## Design constraints
+
+- One narrow 300 × 380 logical-pixel column per window.
+- Automatic scale between 78% and 100% based on viewport size.
+- Horizontal scrolling tabs on narrow screens.
+- Mouse and touch dragging.
+- Subtle short tweens only.
+- No themes, external icon pack, blur, gradients, or heavy decoration.
+- Reverb black, blue, white, and muted-grey palette only.
