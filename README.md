@@ -64,6 +64,23 @@ section:Divider()
 Flags are optional. Add them to controls whose values should be eligible for the
 opt-in remember feature.
 
+## Built-in Anti-AFK
+
+Every tab named `Settings` automatically receives a compact `Reverb` section
+containing an `Anti AFK` toggle. It is enabled by default and uses the same
+idle-response behavior as the main Reverb UI.
+
+```lua
+local Settings = UI:Tab("Settings")
+-- Anti AFK is added automatically. Add script-specific settings normally:
+Settings:Toggle("Remember active settings", false, function(enabled)
+    UI:SetRememberSettings(enabled)
+end)
+```
+
+All Reverb J windows share one Anti-AFK connection. Changing the setting in one
+window updates the setting across the others.
+
 ## Remember settings
 
 Saving is intentionally off by default:

@@ -12,6 +12,7 @@ local UI = ReverbJ:CreateWindow({
 local Main = UI:Tab("Main")
 local Player = UI:Tab("Player")
 local Settings = UI:Tab("Settings")
+-- The enabled-by-default Anti AFK setting is added to this tab automatically.
 
 local Farming = Main:Section("Farming")
 

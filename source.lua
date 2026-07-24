@@ -23,6 +23,9 @@ local Library = {
     Windows = {},
     Open = true,
     Version = "0.1.0",
+    AntiAfkEnabled = true,
+    _AntiAfkConnection = nil,
+    _AntiAfkControls = {},
 }
 
 local Theme = {
@@ -97,6 +100,45 @@ end
 
 local function environment()
     return (getgenv and getgenv()) or _G
+end
+
+function Library:SetAntiAfk(enabled, sourceControl)
+    self.AntiAfkEnabled = enabled ~= false
+
+    if self.AntiAfkEnabled and not self._AntiAfkConnection then
+        local player = Players.LocalPlayer
+        if player then
+            self._AntiAfkConnection = player.Idled:Connect(function()
+                pcall(function()
+                    local virtualUser = Services.VirtualUser
+                    local currentCamera = workspace.CurrentCamera
+                    if not currentCamera then
+                        return
+                    end
+
+                    virtualUser:Button2Down(Vector2.zero, currentCamera.CFrame)
+                    task.wait(1)
+                    virtualUser:Button2Up(Vector2.zero, currentCamera.CFrame)
+                end)
+            end)
+        end
+    elseif not self.AntiAfkEnabled and self._AntiAfkConnection then
+        self._AntiAfkConnection:Disconnect()
+        self._AntiAfkConnection = nil
+    end
+
+    for index = #self._AntiAfkControls, 1, -1 do
+        local control = self._AntiAfkControls[index]
+        if not control.Window or not control.Window.Frame.Parent then
+            table.remove(self._AntiAfkControls, index)
+        elseif control ~= sourceControl and control.Set then
+            control:Set(self.AntiAfkEnabled, true)
+        end
+    end
+end
+
+function Library:GetAntiAfk()
+    return self.AntiAfkEnabled
 end
 
 local function resolveParent()
@@ -1080,6 +1122,22 @@ function Library:CreateWindow(options)
         if #window.Tabs == 1 then
             window:SelectTab(tab)
         end
+
+        if tab.Name:lower() == "settings" and not window._AntiAfkAdded then
+            window._AntiAfkAdded = true
+            local reverbSettings = tab:Section("Reverb")
+            local antiAfkControl
+            antiAfkControl = reverbSettings:Toggle(
+                "Anti AFK",
+                Library:GetAntiAfk(),
+                function(enabled)
+                    Library:SetAntiAfk(enabled, antiAfkControl)
+                end
+            )
+            antiAfkControl.Window = window
+            table.insert(Library._AntiAfkControls, antiAfkControl)
+        end
+
         return tab
     end
 
@@ -1096,8 +1154,17 @@ function Library:CreateWindow(options)
 end
 
 function Library:Destroy()
+    if self._AntiAfkConnection then
+        self._AntiAfkConnection:Disconnect()
+        self._AntiAfkConnection = nil
+    end
+    table.clear(self._AntiAfkControls)
     table.clear(self.Windows)
     root:Destroy()
+    local env = environment()
+    if env.ReverbCompactLibrary == self then
+        env.ReverbCompactLibrary = nil
+    end
 end
 
 local cameraConnection
@@ -1115,5 +1182,17 @@ end
 workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watchCamera)
 watchCamera()
 loadDefaultLogo()
+
+local env = environment()
+local previousLibrary = env.ReverbCompactLibrary
+if previousLibrary ~= Library and type(previousLibrary) == "table"
+    and type(previousLibrary.Destroy) == "function"
+then
+    pcall(function()
+        previousLibrary:Destroy()
+    end)
+end
+env.ReverbCompactLibrary = Library
+Library:SetAntiAfk(true)
 
 return Library
