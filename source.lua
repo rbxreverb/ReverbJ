@@ -635,14 +635,16 @@ function Library:CreateWindow(options)
             })
             local layout = create("UIListLayout", {
                 Padding = UDim.new(0, 5),
+                SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = shell,
             })
             local sectionButton = create("TextButton", {
                 AutoButtonColor = false,
                 BackgroundTransparency = 1,
+                LayoutOrder = 1,
                 Size = UDim2.new(1, 0, 0, 24),
                 Font = Enum.Font.GothamMedium,
-                Text = "⌄  " .. tostring(sectionName or "Section"),
+                Text = tostring(sectionName or "Section"),
                 TextColor3 = Theme.Muted,
                 TextSize = 10,
                 TextXAlignment = Enum.TextXAlignment.Left,
@@ -651,6 +653,7 @@ function Library:CreateWindow(options)
             local body = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
+                LayoutOrder = 2,
                 Size = UDim2.new(1, 0, 0, 0),
                 Parent = shell,
             })
@@ -660,11 +663,11 @@ function Library:CreateWindow(options)
             })
             section.Open = collapsed ~= true
             body.Visible = section.Open
-            sectionButton.Text = (section.Open and "⌄  " or "›  ") .. tostring(sectionName or "Section")
+            sectionButton.TextColor3 = section.Open and Theme.Muted or Theme.Text
             sectionButton.MouseButton1Click:Connect(function()
                 section.Open = not section.Open
                 body.Visible = section.Open
-                sectionButton.Text = (section.Open and "⌄  " or "›  ") .. tostring(sectionName or "Section")
+                sectionButton.TextColor3 = section.Open and Theme.Muted or Theme.Text
             end)
             section.Container = body
             setmetatable(section, { __index = tab })
