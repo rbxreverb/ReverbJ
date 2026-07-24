@@ -170,6 +170,12 @@ local root = create("ScreenGui", {
     Parent = guiParent,
 })
 
+-- Compatibility marker for the current production Loader's hub detector.
+create("Folder", {
+    Name = "ReverbLib",
+    Parent = root,
+})
+
 local loaderCloseScheduled = false
 
 local function closeReverbLoader()
