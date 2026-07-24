@@ -170,6 +170,35 @@ local root = create("ScreenGui", {
     Parent = guiParent,
 })
 
+local loaderCloseScheduled = false
+
+local function closeReverbLoader()
+    if loaderCloseScheduled then
+        return
+    end
+
+    loaderCloseScheduled = true
+
+    task.delay(0.75, function()
+        local containers = {
+            guiParent,
+            CoreGui,
+            Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui"),
+        }
+
+        for _, container in ipairs(containers) do
+            if container then
+                local loader = container:FindFirstChild("ReverbLoader_Final")
+
+                if loader then
+                    loader:Destroy()
+                    break
+                end
+            end
+        end
+    end)
+end
+
 pcall(function()
     if syn and syn.protect_gui then
         syn.protect_gui(root)
@@ -360,7 +389,11 @@ local function titleFor(options)
     local name = options.Game or options.GameName or options.Title or "Game"
     name = tostring(name)
     name = name:gsub("%s+[Bb][Yy]%s+[Rr][Ee][Vv][Ee][Rr][Bb].*$", "")
-    return string.format("%s by Reverb [%s]", name, resolveTier(options))
+    local tier = resolveTier(options)
+    local tierLabel = tier == "PREMIUM"
+        and '<font color="#00AEFF">[PREMIUM]</font>'
+        or "[FREE]"
+    return string.format("%s by Reverb %s", name, tierLabel)
 end
 
 local function configApi(window)
@@ -446,6 +479,7 @@ function Library:CreateWindow(options)
         Position = UDim2.fromOffset(10, 2),
         Size = UDim2.new(1, -44, 1, -2),
         Font = Enum.Font.GothamMedium,
+        RichText = true,
         Text = titleFor(options),
         TextColor3 = Theme.Text,
         TextSize = 12,
@@ -1046,6 +1080,7 @@ function Library:CreateWindow(options)
     window.Config = configApi(window)
     table.insert(self.Windows, window)
     updateScale()
+    closeReverbLoader()
     if window.Remember then
         task.defer(function()
             window.Config:Load()
