@@ -531,7 +531,7 @@ function Library:CreateWindow(options)
         for _, tab in ipairs(self.Tabs) do
             local active = tab == selected
             tab.Page.Visible = active
-            tween(tab.Button, 0.12, {
+            tween(tab.TabButton, 0.12, {
                 TextColor3 = active and Theme.Text or Theme.Muted,
                 BackgroundTransparency = active and 0 or 1,
             })
@@ -560,7 +560,7 @@ function Library:CreateWindow(options)
 
     function window:Tab(name)
         local tab = { Name = tostring(name or "Tab") }
-        tab.Button = create("TextButton", {
+        tab.TabButton = create("TextButton", {
             AutomaticSize = Enum.AutomaticSize.X,
             AutoButtonColor = false,
             BackgroundColor3 = Theme.Raised,
@@ -572,8 +572,8 @@ function Library:CreateWindow(options)
             TextSize = 11,
             Parent = tabBar,
         })
-        padding(tab.Button, 0, 9, 0, 9)
-        corner(tab.Button, 4)
+        padding(tab.TabButton, 0, 9, 0, 9)
+        corner(tab.TabButton, 4)
         tab.Indicator = create("Frame", {
             AnchorPoint = Vector2.new(0, 1),
             BackgroundColor3 = Theme.Accent,
@@ -581,7 +581,7 @@ function Library:CreateWindow(options)
             Position = UDim2.new(0, 5, 1, 0),
             Size = UDim2.new(1, -10, 0, 2),
             Visible = false,
-            Parent = tab.Button,
+            Parent = tab.TabButton,
         })
         corner(tab.Indicator, 2)
 
@@ -605,7 +605,7 @@ function Library:CreateWindow(options)
         })
         tab.Container = tab.Page
 
-        tab.Button.MouseButton1Click:Connect(function()
+        tab.TabButton.MouseButton1Click:Connect(function()
             window:SelectTab(tab)
         end)
 
