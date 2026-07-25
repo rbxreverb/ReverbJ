@@ -954,7 +954,7 @@ function Library:CreateWindow(options)
             local control = { Value = default or options[1], Open = false }
             function control:Set(value, silent)
                 self.Value = value
-                button.Text = tostring(text or "Dropdown") .. "   ·   " .. tostring(value or "None") .. "   ⌄"
+                button.Text = tostring(text or "Dropdown") .. "   ·   " .. tostring(value or "None") .. "   v"
                 if not silent then
                     safeCall(callback, value)
                     window.Config:Save()
