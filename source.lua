@@ -987,6 +987,130 @@ function Library:CreateWindow(options)
             return registerControl(control, flag)
         end
 
+        function tab:MultiDropdown(text, options, default, callback, flag)
+            options = options or {}
+            local holder = create("Frame", {
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 0),
+                Parent = self.Container,
+            })
+            create("UIListLayout", { Padding = UDim.new(0, 2), Parent = holder })
+            local button = create("TextButton", {
+                AutoButtonColor = false,
+                BackgroundColor3 = Theme.Raised,
+                Size = UDim2.new(1, 0, 0, 34),
+                Font = Enum.Font.Gotham,
+                TextColor3 = Theme.Text,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = holder,
+            })
+            padding(button, 0, 10, 0, 10)
+            corner(button, 5)
+            local list = create("Frame", {
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = Theme.Surface,
+                Size = UDim2.new(1, 0, 0, 0),
+                Visible = false,
+                Parent = holder,
+            })
+            padding(list, 3)
+            corner(list, 5)
+            create("UIListLayout", { Padding = UDim.new(0, 2), Parent = list })
+
+            local itemButtons = {}
+            local control = { Value = {}, Open = false }
+
+            local function contains(values, wanted)
+                for _, value in ipairs(values) do
+                    if value == wanted then
+                        return true
+                    end
+                end
+                return false
+            end
+
+            local function updateDisplay()
+                local count = #control.Value
+                local summary = count == 0
+                    and "None"
+                    or count == 1
+                        and tostring(control.Value[1])
+                        or tostring(count) .. " selected"
+                button.Text = tostring(text or "Multi Dropdown")
+                    .. "   -   "
+                    .. summary
+                    .. "   v"
+
+                for option, item in pairs(itemButtons) do
+                    local selected = contains(control.Value, option)
+                    item.Text = (selected and "[x]  " or "[ ]  ") .. tostring(option)
+                    item.TextColor3 = selected and Theme.Accent or Theme.Muted
+                    item.BackgroundTransparency = selected and 0.05 or 0.35
+                end
+            end
+
+            function control:Set(values, silent)
+                local selected = {}
+                if type(values) == "table" then
+                    for _, option in ipairs(options) do
+                        if contains(values, option) then
+                            table.insert(selected, option)
+                        end
+                    end
+                end
+
+                self.Value = selected
+                updateDisplay()
+                if not silent then
+                    safeCall(callback, table.clone(self.Value))
+                    window.Config:Save()
+                end
+            end
+
+            for _, option in ipairs(options) do
+                local item = create("TextButton", {
+                    AutoButtonColor = false,
+                    BackgroundColor3 = Theme.Raised,
+                    BackgroundTransparency = 0.35,
+                    Size = UDim2.new(1, 0, 0, 28),
+                    Font = Enum.Font.Gotham,
+                    Text = tostring(option),
+                    TextColor3 = Theme.Muted,
+                    TextSize = 10,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Parent = list,
+                })
+                padding(item, 0, 8, 0, 8)
+                corner(item, 4)
+                itemButtons[option] = item
+
+                item.MouseButton1Click:Connect(function()
+                    local selected = table.clone(control.Value)
+                    if contains(selected, option) then
+                        for index, value in ipairs(selected) do
+                            if value == option then
+                                table.remove(selected, index)
+                                break
+                            end
+                        end
+                    else
+                        table.insert(selected, option)
+                    end
+                    control:Set(selected)
+                end)
+            end
+
+            button.MouseButton1Click:Connect(function()
+                control.Open = not control.Open
+                list.Visible = control.Open
+            end)
+
+            control:Set(type(default) == "table" and default or {}, true)
+            return registerControl(control, flag)
+        end
+
         function tab:Input(text, placeholder, callback, flag)
             local row = controlRow(self.Container, 52)
             create("TextLabel", {
