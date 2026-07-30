@@ -946,7 +946,7 @@ function Library:CreateWindow(options)
                 self.SettingsOpen = open == true
                 body.Visible = self.SettingsOpen
                 settingsButton.TextColor3 = self.SettingsOpen
-                    and Theme.Accent
+                    and Theme.Text
                     or Theme.Muted
                 settingsButton.BackgroundColor3 = self.SettingsOpen
                     and Theme.AccentDark
