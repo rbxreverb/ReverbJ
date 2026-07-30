@@ -874,9 +874,10 @@ function Library:CreateWindow(options)
                 BackgroundColor3 = Theme.Background,
                 Position = UDim2.new(1, -45, 0.5, 0),
                 Size = UDim2.fromOffset(25, 22),
-                Font = Enum.Font.GothamMedium,
-                Text = utf8.char(9881),
+                Font = Enum.Font.GothamBold,
+                Text = utf8.char(9881) .. utf8.char(65038),
                 TextColor3 = Theme.Muted,
+                TextTransparency = 0,
                 TextSize = 13,
                 ZIndex = 3,
                 Parent = row,
@@ -948,6 +949,7 @@ function Library:CreateWindow(options)
                 settingsButton.TextColor3 = self.SettingsOpen
                     and Theme.Text
                     or Theme.Muted
+                settingsButton.TextTransparency = 0
                 settingsButton.BackgroundColor3 = self.SettingsOpen
                     and Theme.AccentDark
                     or Theme.Background
