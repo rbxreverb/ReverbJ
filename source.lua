@@ -492,6 +492,7 @@ function Library:CreateWindow(options)
     local window = {
         Tabs = {},
         Flags = {},
+        SettingsDrawers = {},
         Remember = options.RememberSettings == true,
         ConfigPath = "Reverb/" .. tostring(options.ConfigName or options.Game or options.Title or "script")
             :gsub("[^%w_-]", "_") .. "_compact.json",
@@ -839,6 +840,135 @@ function Library:CreateWindow(options)
             end)
             control:Set(control.Value, true)
             return registerControl(control, flag)
+        end
+
+        function tab:SettingsToggle(text, default, callback, flag)
+            local holder = create("Frame", {
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 0),
+                Parent = self.Container,
+            })
+            create("UIListLayout", {
+                Padding = UDim.new(0, 4),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = holder,
+            })
+
+            local row = controlRow(holder)
+            row.LayoutOrder = 1
+            create("TextLabel", {
+                BackgroundTransparency = 1,
+                Position = UDim2.fromOffset(10, 0),
+                Size = UDim2.new(1, -88, 1, 0),
+                Font = Enum.Font.Gotham,
+                Text = tostring(text or "Toggle"),
+                TextColor3 = Theme.Text,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = row,
+            })
+            local settingsButton = create("TextButton", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                AutoButtonColor = false,
+                BackgroundColor3 = Theme.Background,
+                Position = UDim2.new(1, -45, 0.5, 0),
+                Size = UDim2.fromOffset(25, 22),
+                Font = Enum.Font.GothamMedium,
+                Text = utf8.char(9881),
+                TextColor3 = Theme.Muted,
+                TextSize = 13,
+                ZIndex = 3,
+                Parent = row,
+            })
+            corner(settingsButton, 4)
+            local track = create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Theme.Border,
+                Position = UDim2.new(1, -9, 0.5, 0),
+                Size = UDim2.fromOffset(30, 16),
+                Parent = row,
+            })
+            corner(track, 8)
+            local knob = create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Theme.Muted,
+                Position = UDim2.new(0, 3, 0.5, 0),
+                Size = UDim2.fromOffset(10, 10),
+                Parent = track,
+            })
+            corner(knob, 5)
+            local hit = create("TextButton", {
+                BackgroundTransparency = 1,
+                Size = UDim2.fromScale(1, 1),
+                Text = "",
+                ZIndex = 2,
+                Parent = row,
+            })
+
+            local body = create("Frame", {
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = Theme.Surface,
+                BackgroundTransparency = 0.35,
+                LayoutOrder = 2,
+                Size = UDim2.new(1, 0, 0, 0),
+                Visible = false,
+                Parent = holder,
+            })
+            padding(body, 6)
+            corner(body, 5)
+            create("UIListLayout", {
+                Padding = UDim.new(0, 5),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = body,
+            })
+
+            local control = {
+                Value = default == true,
+                SettingsOpen = false,
+            }
+            function control:Set(value, silent)
+                self.Value = value == true
+                tween(track, 0.12, {
+                    BackgroundColor3 = self.Value and Theme.Accent or Theme.Border,
+                })
+                tween(knob, 0.12, {
+                    BackgroundColor3 = self.Value and Theme.Text or Theme.Muted,
+                    Position = self.Value and UDim2.new(1, -13, 0.5, 0)
+                        or UDim2.new(0, 3, 0.5, 0),
+                })
+                if not silent then
+                    safeCall(callback, self.Value)
+                    window.Config:Save()
+                end
+            end
+            function control:SetSettingsOpen(open)
+                self.SettingsOpen = open == true
+                body.Visible = self.SettingsOpen
+                settingsButton.TextColor3 = self.SettingsOpen
+                    and Theme.Accent
+                    or Theme.Muted
+                settingsButton.BackgroundColor3 = self.SettingsOpen
+                    and Theme.AccentDark
+                    or Theme.Background
+            end
+
+            table.insert(window.SettingsDrawers, control)
+            hit.MouseButton1Click:Connect(function()
+                control:Set(not control.Value)
+            end)
+            settingsButton.MouseButton1Click:Connect(function()
+                local shouldOpen = not control.SettingsOpen
+                for _, drawer in ipairs(window.SettingsDrawers) do
+                    drawer:SetSettingsOpen(false)
+                end
+                control:SetSettingsOpen(shouldOpen)
+            end)
+
+            control:Set(control.Value, true)
+            local settingsTarget = { Container = body }
+            setmetatable(settingsTarget, { __index = self })
+            return registerControl(control, flag), settingsTarget
         end
 
         function tab:Slider(text, minimum, maximum, default, callback, flag)

@@ -52,6 +52,14 @@ local section = Main:Section("Section name", false) -- second value starts colla
 
 section:Button("Run", function() end)
 section:Toggle("Enabled", false, function(value) end, "EnabledFlag")
+
+local toggle, settings = section:SettingsToggle(
+    "Feature",
+    false,
+    function(value) end,
+    "FeatureFlag"
+)
+settings:Toggle("Option", true, function(value) end, "OptionFlag")
 section:Slider("Amount", 0, 100, 50, function(value) end, "AmountFlag")
 section:Dropdown("Mode", {"A", "B"}, "A", function(value) end, "ModeFlag")
 section:MultiDropdown("ESP Features", {"Boxes", "Names"}, {"Boxes"}, function(values) end, "EspFlag")
