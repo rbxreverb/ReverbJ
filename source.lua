@@ -928,10 +928,15 @@ function Library:CreateWindow(options)
                 Size = UDim2.new(1, 0, 0, 0),
                 Parent = self.Container,
             })
-            create("UIListLayout", { Padding = UDim.new(0, 2), Parent = holder })
+            create("UIListLayout", {
+                Padding = UDim.new(0, 2),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = holder,
+            })
             local button = create("TextButton", {
                 AutoButtonColor = false,
                 BackgroundColor3 = Theme.Raised,
+                LayoutOrder = 1,
                 Size = UDim2.new(1, 0, 0, 34),
                 Font = Enum.Font.Gotham,
                 TextColor3 = Theme.Text,
@@ -944,6 +949,7 @@ function Library:CreateWindow(options)
             local list = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundColor3 = Theme.Surface,
+                LayoutOrder = 2,
                 Size = UDim2.new(1, 0, 0, 0),
                 Visible = false,
                 Parent = holder,
@@ -995,10 +1001,15 @@ function Library:CreateWindow(options)
                 Size = UDim2.new(1, 0, 0, 0),
                 Parent = self.Container,
             })
-            create("UIListLayout", { Padding = UDim.new(0, 2), Parent = holder })
+            create("UIListLayout", {
+                Padding = UDim.new(0, 2),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = holder,
+            })
             local button = create("TextButton", {
                 AutoButtonColor = false,
                 BackgroundColor3 = Theme.Raised,
+                LayoutOrder = 1,
                 Size = UDim2.new(1, 0, 0, 34),
                 Font = Enum.Font.Gotham,
                 TextColor3 = Theme.Text,
@@ -1011,6 +1022,7 @@ function Library:CreateWindow(options)
             local list = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundColor3 = Theme.Surface,
+                LayoutOrder = 2,
                 Size = UDim2.new(1, 0, 0, 0),
                 Visible = false,
                 Parent = holder,
