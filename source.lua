@@ -1278,6 +1278,7 @@ function Library:CreateWindow(options)
             local box = create("TextBox", {
                 BackgroundColor3 = Theme.Background,
                 ClearTextOnFocus = false,
+                ClipsDescendants = true,
                 Position = UDim2.fromOffset(8, 23),
                 Size = UDim2.new(1, -16, 0, 23),
                 Font = Enum.Font.Gotham,
@@ -1286,6 +1287,7 @@ function Library:CreateWindow(options)
                 Text = "",
                 TextColor3 = Theme.Text,
                 TextSize = 10,
+                TextTruncate = Enum.TextTruncate.AtEnd,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = row,
             })
@@ -1300,8 +1302,12 @@ function Library:CreateWindow(options)
                     window.Config:Save()
                 end
             end
+            box.Focused:Connect(function()
+                box.TextTruncate = Enum.TextTruncate.None
+            end)
             box.FocusLost:Connect(function(enterPressed)
                 control:Set(box.Text)
+                box.TextTruncate = Enum.TextTruncate.AtEnd
             end)
             return registerControl(control, flag)
         end
