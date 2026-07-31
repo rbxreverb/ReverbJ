@@ -38,6 +38,8 @@ scrollable.
 The floating logo has two permanently available, compact action chips beside it:
 `Join Discord` and `Visit Website`. They follow the launcher, automatically move
 to whichever side has room, and copy the relevant official link when clicked.
+The chips appear while the main script UI is closed and stay hidden while it is
+open.
 
 ## Basic usage
 

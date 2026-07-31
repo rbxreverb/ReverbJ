@@ -42,7 +42,7 @@ local Theme = {
 }
 
 local REVERB_WEBSITE = "https://rbxreverb.com/"
-local REVERB_DISCORD = "https://discord.com/invite/TpJd6E8vKZ"
+local REVERB_DISCORD = "https://discord.com/invite/xKh6WsgJem"
 local UI_PREFS_PATH = "Reverb/ui_preferences.json"
 
 local function create(className, properties)
@@ -490,6 +490,7 @@ local promoTray = create("Frame", {
     BackgroundTransparency = 1,
     Position = UDim2.new(1, 8, 0.5, 0),
     Size = UDim2.fromOffset(112, 56),
+    Visible = false,
     ZIndex = 8,
     Parent = launcher,
 })
@@ -685,6 +686,7 @@ end
 function Library:SetOpen(isOpen)
     self.Open = isOpen == true
     windowLayer.Visible = self.Open
+    promoTray.Visible = not self.Open
     openButton.Text = self.Open and "Hide Script UI" or "Open Script UI"
     tween(launcherStroke, 0.14, {
         Transparency = self.Open and 0 or 0.55,
