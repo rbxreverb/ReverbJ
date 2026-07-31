@@ -41,6 +41,10 @@ local Theme = {
     Danger = Color3.fromRGB(225, 76, 86),
 }
 
+local REVERB_WEBSITE = "https://rbxreverb.com/"
+local REVERB_DISCORD = "https://discord.com/invite/TpJd6E8vKZ"
+local UI_PREFS_PATH = "Reverb/ui_preferences.json"
+
 local function create(className, properties)
     local object = Instance.new(className)
     for property, value in pairs(properties or {}) do
@@ -265,12 +269,12 @@ local launcher = create("ImageButton", {
     AutoButtonColor = false,
     BackgroundColor3 = Theme.Background,
     Position = UDim2.new(0, 14, 0.5, -22),
-    Size = UDim2.fromOffset(44, 44),
+    Size = UDim2.fromOffset(46, 46),
     Image = "rbxassetid://0",
     Parent = root,
 })
-corner(launcher, 12)
-stroke(launcher, Theme.Accent, 0.15)
+corner(launcher, 23)
+local launcherStroke = stroke(launcher, Theme.Accent, 0.12)
 
 -- Text fallback stays visible until a hosted Reverb icon asset id is supplied.
 local launcherMark = create("TextLabel", {
@@ -282,7 +286,54 @@ local launcherMark = create("TextLabel", {
     TextSize = 21,
     Parent = launcher,
 })
-makeDraggable(launcher, launcher)
+
+local uiPreferences = {
+    LauncherX = 14,
+    LauncherYScale = 0.5,
+    LauncherYOffset = -23,
+    UIScale = 1,
+}
+
+local function loadUiPreferences()
+    if type(readfile) ~= "function" or type(isfile) ~= "function"
+        or not isfile(UI_PREFS_PATH)
+    then
+        return
+    end
+
+    local ok, values = pcall(function()
+        return HttpService:JSONDecode(readfile(UI_PREFS_PATH))
+    end)
+    if ok and type(values) == "table" then
+        for key, fallback in pairs(uiPreferences) do
+            if type(values[key]) == type(fallback) then
+                uiPreferences[key] = values[key]
+            end
+        end
+    end
+end
+
+local function saveUiPreferences()
+    if type(writefile) ~= "function" then
+        return
+    end
+    pcall(function()
+        if type(makefolder) == "function"
+            and (type(isfolder) ~= "function" or not isfolder("Reverb"))
+        then
+            makefolder("Reverb")
+        end
+        writefile(UI_PREFS_PATH, HttpService:JSONEncode(uiPreferences))
+    end)
+end
+
+loadUiPreferences()
+launcher.Position = UDim2.new(
+    0,
+    uiPreferences.LauncherX,
+    uiPreferences.LauncherYScale,
+    uiPreferences.LauncherYOffset
+)
 
 local function loadDefaultLogo()
     local customAsset = getcustomasset or getsynasset
@@ -321,20 +372,237 @@ local function loadDefaultLogo()
     end)
 end
 
-local function updateScale()
+local quickMenu = create("Frame", {
+    Name = "ReverbQuickMenu",
+    BackgroundColor3 = Theme.Background,
+    Size = UDim2.fromOffset(238, 268),
+    Visible = false,
+    ZIndex = 50,
+    Parent = root,
+})
+corner(quickMenu, 12)
+stroke(quickMenu, Theme.Border)
+
+local menuAccent = create("Frame", {
+    BackgroundColor3 = Theme.Accent,
+    BorderSizePixel = 0,
+    Size = UDim2.new(1, 0, 0, 2),
+    ZIndex = 51,
+    Parent = quickMenu,
+})
+corner(menuAccent, 12)
+
+create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(14, 10),
+    Size = UDim2.new(1, -28, 0, 22),
+    Font = Enum.Font.GothamBold,
+    Text = "REVERB CONTROLS",
+    TextColor3 = Theme.Text,
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 51,
+    Parent = quickMenu,
+})
+
+local menuStatus = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(14, 31),
+    Size = UDim2.new(1, -28, 0, 18),
+    Font = Enum.Font.Gotham,
+    Text = "RightCtrl  |  Connected",
+    TextColor3 = Theme.Muted,
+    TextSize = 10,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 51,
+    Parent = quickMenu,
+})
+
+local menuContent = create("Frame", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(10, 56),
+    Size = UDim2.new(1, -20, 1, -66),
+    ZIndex = 51,
+    Parent = quickMenu,
+})
+local menuLayout = create("UIListLayout", {
+    Padding = UDim.new(0, 6),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Parent = menuContent,
+})
+
+local function menuButton(text, callback)
+    local button = create("TextButton", {
+        AutoButtonColor = false,
+        BackgroundColor3 = Theme.Raised,
+        Size = UDim2.new(1, 0, 0, 34),
+        Font = Enum.Font.GothamMedium,
+        Text = text,
+        TextColor3 = Theme.Text,
+        TextSize = 11,
+        ZIndex = 52,
+        Parent = menuContent,
+    })
+    corner(button, 7)
+    button.MouseEnter:Connect(function()
+        tween(button, 0.12, { BackgroundColor3 = Theme.Hover })
+    end)
+    button.MouseLeave:Connect(function()
+        tween(button, 0.12, { BackgroundColor3 = Theme.Raised })
+    end)
+    button.MouseButton1Click:Connect(function()
+        safeCall(callback, button)
+    end)
+    return button
+end
+
+local function copyLink(label, url)
+    if type(setclipboard) == "function" then
+        local ok = pcall(setclipboard, url)
+        if ok then
+            Library:Notify(label .. " link copied", 2.5)
+            return
+        end
+    end
+    Library:Notify(url, 5)
+end
+
+local openButton
+openButton = menuButton("Hide Script UI", function()
+    Library:SetOpen(not Library.Open)
+    quickMenu.Visible = false
+end)
+menuButton("Website  -  rbxreverb.com", function()
+    copyLink("Website", REVERB_WEBSITE)
+end)
+menuButton("Discord  -  Join the community", function()
+    copyLink("Discord", REVERB_DISCORD)
+end)
+
+local scaleRow = create("Frame", {
+    BackgroundColor3 = Theme.Raised,
+    Size = UDim2.new(1, 0, 0, 34),
+    ZIndex = 52,
+    Parent = menuContent,
+})
+corner(scaleRow, 7)
+local scaleLabel = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(10, 0),
+    Size = UDim2.new(1, -82, 1, 0),
+    Font = Enum.Font.GothamMedium,
+    Text = "UI Scale  " .. math.floor(uiPreferences.UIScale * 100) .. "%",
+    TextColor3 = Theme.Text,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 53,
+    Parent = scaleRow,
+})
+
+local updateScale
+local function scaleButton(text, x, delta)
+    local button = create("TextButton", {
+        AutoButtonColor = false,
+        BackgroundColor3 = Theme.Hover,
+        Position = UDim2.new(1, x, 0, 5),
+        Size = UDim2.fromOffset(26, 24),
+        Font = Enum.Font.GothamBold,
+        Text = text,
+        TextColor3 = Theme.Accent,
+        TextSize = 15,
+        ZIndex = 53,
+        Parent = scaleRow,
+    })
+    corner(button, 6)
+    button.MouseButton1Click:Connect(function()
+        uiPreferences.UIScale = math.clamp(uiPreferences.UIScale + delta, 0.8, 1.2)
+        scaleLabel.Text = "UI Scale  " .. math.floor(uiPreferences.UIScale * 100) .. "%"
+        saveUiPreferences()
+        updateScale()
+    end)
+end
+scaleButton("-", -64, -0.1)
+scaleButton("+", -32, 0.1)
+
+menuButton("Reset UI Position", function()
+    uiPreferences.LauncherX = 14
+    uiPreferences.LauncherYScale = 0.5
+    uiPreferences.LauncherYOffset = -23
+    launcher.Position = UDim2.new(0, 14, 0.5, -23)
+    for index, window in ipairs(Library.Windows) do
+        window.Frame.Position = UDim2.new(
+            0.5,
+            -150 + ((index - 1) * 24),
+            0.5,
+            -190 + ((index - 1) * 20)
+        )
+    end
+    saveUiPreferences()
+    updateScale()
+end)
+
+local function positionQuickMenu(viewport, mobile)
+    if mobile then
+        quickMenu.AnchorPoint = Vector2.new(0.5, 1)
+        quickMenu.Position = UDim2.new(0.5, 0, 1, -12)
+        quickMenu.Size = UDim2.new(1, -24, 0, 268)
+        return
+    end
+
+    quickMenu.AnchorPoint = Vector2.zero
+    quickMenu.Size = UDim2.fromOffset(238, 268)
+    local launcherCenter = launcher.AbsolutePosition + (launcher.AbsoluteSize / 2)
+    local x = launcherCenter.X + 34
+    if x + 238 > viewport.X - 10 then
+        x = launcherCenter.X - 34 - 238
+    end
+    local y = math.clamp(launcherCenter.Y - 134, 10, viewport.Y - 278)
+    quickMenu.Position = UDim2.fromOffset(x, y)
+end
+
+updateScale = function()
     local camera = workspace.CurrentCamera
     local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
-    local scale = math.clamp(math.min(viewport.X / 900, viewport.Y / 650), 0.78, 1)
+    local mobile = UserInputService.TouchEnabled and viewport.X < 900
+    local launcherSize = mobile and 52 or 46
+    menuStatus.Text = mobile and "Hold logo for menu  |  Connected"
+        or "RightCtrl  |  Connected"
+    launcher.Size = UDim2.fromOffset(launcherSize, launcherSize)
+    launcher:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(0, launcherSize / 2)
     for _, window in ipairs(Library.Windows) do
+        local scale
+        if mobile then
+            scale = math.clamp(uiPreferences.UIScale, 0.8, 1.1)
+            window.Frame.Size = UDim2.fromOffset(
+                math.min(340, (viewport.X - 24) / scale),
+                math.min(440, (viewport.Y - 72) / scale)
+            )
+        else
+            local availableScale = math.min(
+                (viewport.X - 24) / 300,
+                (viewport.Y - 72) / 380
+            )
+            local maximumSafeScale = math.max(0.68, math.min(1.2, availableScale))
+            scale = math.clamp(uiPreferences.UIScale, 0.68, maximumSafeScale)
+            window.Frame.Size = UDim2.fromOffset(300, 380)
+        end
         window.Scale.Scale = scale
+        local renderedSize = window.Frame.AbsoluteSize * scale
+        local absolute = window.Frame.AbsolutePosition
+        local clampedX = math.clamp(absolute.X, 8, math.max(8, viewport.X - renderedSize.X - 8))
+        local clampedY = math.clamp(absolute.Y, 8, math.max(8, viewport.Y - renderedSize.Y - 8))
+        window.Frame.Position = UDim2.fromOffset(clampedX, clampedY)
     end
+    positionQuickMenu(viewport, mobile)
 end
 
 function Library:SetOpen(isOpen)
     self.Open = isOpen == true
     windowLayer.Visible = self.Open
-    tween(launcher, 0.14, {
-        BackgroundColor3 = self.Open and Theme.AccentDark or Theme.Background,
+    openButton.Text = self.Open and "Hide Script UI" or "Open Script UI"
+    tween(launcherStroke, 0.14, {
+        Transparency = self.Open and 0 or 0.55,
+        Thickness = self.Open and 2 or 1,
     })
 end
 
@@ -342,8 +610,105 @@ function Library:Toggle()
     self:SetOpen(not self.Open)
 end
 
-launcher.MouseButton1Click:Connect(function()
-    Library:Toggle()
+local function setQuickMenuOpen(open)
+    quickMenu.Visible = open == true
+    if quickMenu.Visible then
+        updateScale()
+    end
+end
+
+local launcherDragging = false
+local launcherMoved = false
+local launcherInput
+local launcherStart
+local launcherStartPosition
+local launcherPressedAt = 0
+
+launcher.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        setQuickMenuOpen(not quickMenu.Visible)
+        return
+    end
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+        and input.UserInputType ~= Enum.UserInputType.Touch
+    then
+        return
+    end
+    launcherDragging = true
+    launcherMoved = false
+    launcherInput = input
+    launcherStart = input.Position
+    launcherStartPosition = launcher.Position
+    launcherPressedAt = os.clock()
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed or UserInputService:GetFocusedTextBox() then
+        return
+    end
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        Library:Toggle()
+    end
+end)
+
+launcher.InputChanged:Connect(function(input)
+    if launcherDragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        launcherInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if not launcherDragging or input ~= launcherInput then
+        return
+    end
+    local delta = input.Position - launcherStart
+    if delta.Magnitude >= 6 then
+        launcherMoved = true
+    end
+    if launcherMoved then
+        launcher.Position = UDim2.new(
+            launcherStartPosition.X.Scale,
+            launcherStartPosition.X.Offset + delta.X,
+            launcherStartPosition.Y.Scale,
+            launcherStartPosition.Y.Offset + delta.Y
+        )
+        if quickMenu.Visible then
+            updateScale()
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if not launcherDragging or (
+        input.UserInputType ~= Enum.UserInputType.MouseButton1
+        and input.UserInputType ~= Enum.UserInputType.Touch
+    ) then
+        return
+    end
+    launcherDragging = false
+    local heldFor = os.clock() - launcherPressedAt
+    if launcherMoved then
+        local camera = workspace.CurrentCamera
+        local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+        local center = launcher.AbsolutePosition + (launcher.AbsoluteSize / 2)
+        local snapX = center.X < viewport.X / 2 and 12 or viewport.X - launcher.AbsoluteSize.X - 12
+        local snapY = math.clamp(launcher.AbsolutePosition.Y, 12, viewport.Y - launcher.AbsoluteSize.Y - 12)
+        launcher.Position = UDim2.fromOffset(snapX, snapY)
+        uiPreferences.LauncherX = snapX
+        uiPreferences.LauncherYScale = 0
+        uiPreferences.LauncherYOffset = snapY
+        saveUiPreferences()
+        updateScale()
+    elseif input.UserInputType == Enum.UserInputType.Touch and heldFor >= 0.55 then
+        setQuickMenuOpen(not quickMenu.Visible)
+    elseif quickMenu.Visible then
+        setQuickMenuOpen(false)
+    else
+        Library:Toggle()
+    end
 end)
 
 function Library:SetLogo(asset)
