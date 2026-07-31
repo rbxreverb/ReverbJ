@@ -35,10 +35,9 @@ the executor supports it. Mobile windows use the available viewport instead of
 shrinking desktop controls to an unusable size, and their existing pages remain
 scrollable.
 
-The floating logo periodically shows a small clickable promotion bubble beside
-it, alternating between Discord and `rbxreverb.com`. The bubble follows the
-launcher and automatically opens on whichever side has room. Clicking it copies
-the relevant official link.
+The floating logo has two permanently available, compact action chips beside it:
+`Join Discord` and `Visit Website`. They follow the launcher, automatically move
+to whichever side has room, and copy the relevant official link when clicked.
 
 ## Basic usage
 

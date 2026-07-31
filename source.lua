@@ -482,6 +482,76 @@ local function copyLink(label, url)
     Library:Notify(url, 5)
 end
 
+-- Permanent, lightweight calls-to-action attached to the launcher. Keeping
+-- them as two quiet chips makes the official links discoverable without
+-- occupying any space inside each game's controls.
+local promoTray = create("Frame", {
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundTransparency = 1,
+    Position = UDim2.new(1, 8, 0.5, 0),
+    Size = UDim2.fromOffset(112, 56),
+    ZIndex = 8,
+    Parent = launcher,
+})
+create("UIListLayout", {
+    Padding = UDim.new(0, 4),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    VerticalAlignment = Enum.VerticalAlignment.Center,
+    Parent = promoTray,
+})
+
+local function promoChip(text, label, url)
+    local button = create("TextButton", {
+        AutoButtonColor = false,
+        BackgroundColor3 = Theme.Surface,
+        BackgroundTransparency = 0.12,
+        Size = UDim2.new(1, 0, 0, 26),
+        Font = Enum.Font.GothamMedium,
+        Text = "  " .. text,
+        TextColor3 = Theme.Text,
+        TextSize = 10,
+        ZIndex = 9,
+        Parent = promoTray,
+    })
+    corner(button, 13)
+    stroke(button, Theme.Accent, 0.62)
+    local dot = create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        Position = UDim2.fromOffset(12, 13),
+        Size = UDim2.fromOffset(5, 5),
+        ZIndex = 10,
+        Parent = button,
+    })
+    corner(dot, 3)
+    button.MouseEnter:Connect(function()
+        tween(button, 0.12, { BackgroundTransparency = 0 })
+    end)
+    button.MouseLeave:Connect(function()
+        tween(button, 0.12, { BackgroundTransparency = 0.12 })
+    end)
+    button.MouseButton1Click:Connect(function()
+        copyLink(label, url)
+    end)
+end
+
+promoChip("Join Discord", "Discord", REVERB_DISCORD)
+promoChip("Visit Website", "Website", REVERB_WEBSITE)
+
+local function positionPromoTray()
+    local camera = workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+    local centerX = launcher.AbsolutePosition.X + (launcher.AbsoluteSize.X / 2)
+    if centerX > viewport.X / 2 then
+        promoTray.AnchorPoint = Vector2.new(1, 0.5)
+        promoTray.Position = UDim2.new(0, -8, 0.5, 0)
+    else
+        promoTray.AnchorPoint = Vector2.new(0, 0.5)
+        promoTray.Position = UDim2.new(1, 8, 0.5, 0)
+    end
+end
+
 local openButton
 openButton = menuButton("Hide Script UI", function()
     Library:SetOpen(not Library.Open)
@@ -608,7 +678,7 @@ updateScale = function()
         local clampedY = math.clamp(absolute.Y, 8, math.max(8, viewport.Y - renderedSize.Y - 8))
         window.Frame.Position = UDim2.fromOffset(clampedX, clampedY)
     end
-    positionPromoBubble()
+    positionPromoTray()
     positionQuickMenu(viewport, mobile)
 end
 
@@ -690,7 +760,7 @@ UserInputService.InputChanged:Connect(function(input)
         launcherStartPosition.Y.Scale,
         launcherStartPosition.Y.Offset + delta.Y
     )
-    positionPromoBubble()
+    positionPromoTray()
     if quickMenu.Visible then
         updateScale()
     end
@@ -733,99 +803,6 @@ function Library:SetLogo(asset)
     launcherMark.Visible = launcherLogo.Image == ""
         or launcherLogo.Image == "rbxassetid://0"
 end
-
-local promoBubble = create("TextButton", {
-    AnchorPoint = Vector2.new(0, 0.5),
-    AutoButtonColor = false,
-    BackgroundColor3 = Theme.Surface,
-    BackgroundTransparency = 1,
-    Position = UDim2.new(1, 9, 0.5, 0),
-    Size = UDim2.fromOffset(148, 32),
-    Font = Enum.Font.GothamMedium,
-    Text = "Join our Discord",
-    TextColor3 = Theme.Text,
-    TextSize = 11,
-    TextTransparency = 1,
-    Visible = false,
-    ZIndex = 8,
-    Parent = launcher,
-})
-corner(promoBubble, 16)
-local promoStroke = stroke(promoBubble, Theme.Accent, 1)
-
-local promoDot = create("Frame", {
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundColor3 = Theme.Accent,
-    BorderSizePixel = 0,
-    Position = UDim2.fromOffset(13, 16),
-    Size = UDim2.fromOffset(6, 6),
-    ZIndex = 9,
-    Parent = promoBubble,
-})
-corner(promoDot, 3)
-
-local promoItems = {
-    { Text = "Join our Discord", Label = "Discord", Url = REVERB_DISCORD },
-    { Text = "Visit rbxreverb.com", Label = "Website", Url = REVERB_WEBSITE },
-}
-local promoIndex = 0
-local activePromo = promoItems[1]
-
-local function positionPromoBubble()
-    local camera = workspace.CurrentCamera
-    local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
-    local centerX = launcher.AbsolutePosition.X + (launcher.AbsoluteSize.X / 2)
-    if centerX > viewport.X / 2 then
-        promoBubble.AnchorPoint = Vector2.new(1, 0.5)
-        promoBubble.Position = UDim2.new(0, -9, 0.5, 0)
-    else
-        promoBubble.AnchorPoint = Vector2.new(0, 0.5)
-        promoBubble.Position = UDim2.new(1, 9, 0.5, 0)
-    end
-end
-
-local function showNextPromo()
-    promoIndex = (promoIndex % #promoItems) + 1
-    activePromo = promoItems[promoIndex]
-    promoBubble.Text = "     " .. activePromo.Text
-    positionPromoBubble()
-    promoBubble.Visible = true
-    promoBubble.Size = UDim2.fromOffset(126, 28)
-    tween(promoBubble, 0.2, {
-        BackgroundTransparency = 0.04,
-        Size = UDim2.fromOffset(148, 32),
-        TextTransparency = 0,
-    })
-    tween(promoStroke, 0.2, { Transparency = 0.35 })
-
-    task.delay(5, function()
-        if promoBubble.Parent then
-            tween(promoBubble, 0.18, {
-                BackgroundTransparency = 1,
-                TextTransparency = 1,
-            })
-            tween(promoStroke, 0.18, { Transparency = 1 })
-            task.delay(0.2, function()
-                if promoBubble.Parent then
-                    promoBubble.Visible = false
-                end
-            end)
-        end
-    end)
-end
-
-promoBubble.MouseButton1Click:Connect(function()
-    copyLink(activePromo.Label, activePromo.Url)
-    promoBubble.Visible = false
-end)
-
-task.spawn(function()
-    task.wait(2.5)
-    while root.Parent do
-        showNextPromo()
-        task.wait(11)
-    end
-end)
 
 local notificationHost = create("Frame", {
     BackgroundTransparency = 1,
