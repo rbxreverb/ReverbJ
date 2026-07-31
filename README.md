@@ -25,7 +25,7 @@ uploaded.
 The Reverb logo is the shared control point for every ReverbJ window:
 
 - Click or tap it to show and hide the script UI.
-- Drag it to either screen edge; its position is remembered.
+- Drag it freely anywhere; its exact position is remembered.
 - Right-click it on desktop, or hold it on mobile, to open Reverb Controls.
 - Press `RightControl` on desktop to show or hide the script UI.
 
@@ -34,6 +34,9 @@ and a reset-position action. Link buttons copy their URL to the clipboard when
 the executor supports it. Mobile windows use the available viewport instead of
 shrinking desktop controls to an unusable size, and their existing pages remain
 scrollable.
+
+Every window also keeps `rbxreverb.com` and `Discord` visible in its footer, so
+players can discover the official links without opening Reverb Controls.
 
 ## Basic usage
 

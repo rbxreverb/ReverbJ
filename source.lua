@@ -268,13 +268,27 @@ local launcher = create("ImageButton", {
     Name = "ReverbLauncher",
     AutoButtonColor = false,
     BackgroundColor3 = Theme.Background,
+    ClipsDescendants = true,
     Position = UDim2.new(0, 14, 0.5, -22),
-    Size = UDim2.fromOffset(46, 46),
-    Image = "rbxassetid://0",
+    Size = UDim2.fromOffset(54, 54),
+    Image = "",
     Parent = root,
 })
-corner(launcher, 23)
+corner(launcher, 27)
 local launcherStroke = stroke(launcher, Theme.Accent, 0.12)
+
+-- Keep generous black space around the cyan mark, matching Reverb's profile
+-- picture instead of stretching the transparent artwork to the button edges.
+local launcherLogo = create("ImageLabel", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundTransparency = 1,
+    Position = UDim2.fromScale(0.5, 0.5),
+    Size = UDim2.fromScale(0.78, 0.78),
+    Image = "rbxassetid://0",
+    ScaleType = Enum.ScaleType.Fit,
+    ZIndex = 2,
+    Parent = launcher,
+})
 
 -- Text fallback stays visible until a hosted Reverb icon asset id is supplied.
 local launcherMark = create("TextLabel", {
@@ -284,13 +298,14 @@ local launcherMark = create("TextLabel", {
     Text = "R",
     TextColor3 = Theme.Accent,
     TextSize = 21,
+    ZIndex = 3,
     Parent = launcher,
 })
 
 local uiPreferences = {
     LauncherX = 14,
     LauncherYScale = 0.5,
-    LauncherYOffset = -23,
+    LauncherYOffset = -27,
     UIScale = 1,
 }
 
@@ -363,7 +378,7 @@ local function loadDefaultLogo()
                     )
                 )
             end
-            launcher.Image = customAsset(path)
+            launcherLogo.Image = customAsset(path)
             launcherMark.Visible = false
         end)
         if not ok then
@@ -527,8 +542,8 @@ scaleButton("+", -32, 0.1)
 menuButton("Reset UI Position", function()
     uiPreferences.LauncherX = 14
     uiPreferences.LauncherYScale = 0.5
-    uiPreferences.LauncherYOffset = -23
-    launcher.Position = UDim2.new(0, 14, 0.5, -23)
+    uiPreferences.LauncherYOffset = -27
+    launcher.Position = UDim2.new(0, 14, 0.5, -27)
     for index, window in ipairs(Library.Windows) do
         window.Frame.Position = UDim2.new(
             0.5,
@@ -564,7 +579,7 @@ updateScale = function()
     local camera = workspace.CurrentCamera
     local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
     local mobile = UserInputService.TouchEnabled and viewport.X < 900
-    local launcherSize = mobile and 52 or 46
+    local launcherSize = mobile and 60 or 54
     menuStatus.Text = mobile and "Hold logo for menu  |  Connected"
         or "RightCtrl  |  Connected"
     launcher.Size = UDim2.fromOffset(launcherSize, launcherSize)
@@ -665,19 +680,17 @@ UserInputService.InputChanged:Connect(function(input)
         return
     end
     local delta = input.Position - launcherStart
-    if delta.Magnitude >= 6 then
+    if delta.Magnitude >= 3 then
         launcherMoved = true
     end
-    if launcherMoved then
-        launcher.Position = UDim2.new(
-            launcherStartPosition.X.Scale,
-            launcherStartPosition.X.Offset + delta.X,
-            launcherStartPosition.Y.Scale,
-            launcherStartPosition.Y.Offset + delta.Y
-        )
-        if quickMenu.Visible then
-            updateScale()
-        end
+    launcher.Position = UDim2.new(
+        launcherStartPosition.X.Scale,
+        launcherStartPosition.X.Offset + delta.X,
+        launcherStartPosition.Y.Scale,
+        launcherStartPosition.Y.Offset + delta.Y
+    )
+    if quickMenu.Visible then
+        updateScale()
     end
 end)
 
@@ -691,15 +704,13 @@ UserInputService.InputEnded:Connect(function(input)
     launcherDragging = false
     local heldFor = os.clock() - launcherPressedAt
     if launcherMoved then
-        local camera = workspace.CurrentCamera
-        local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
-        local center = launcher.AbsolutePosition + (launcher.AbsoluteSize / 2)
-        local snapX = center.X < viewport.X / 2 and 12 or viewport.X - launcher.AbsoluteSize.X - 12
-        local snapY = math.clamp(launcher.AbsolutePosition.Y, 12, viewport.Y - launcher.AbsoluteSize.Y - 12)
-        launcher.Position = UDim2.fromOffset(snapX, snapY)
-        uiPreferences.LauncherX = snapX
+        -- Preserve the free movement of the original live launcher. Save the
+        -- exact release point without snapping it to an edge or grid.
+        local releasePosition = launcher.AbsolutePosition
+        launcher.Position = UDim2.fromOffset(releasePosition.X, releasePosition.Y)
+        uiPreferences.LauncherX = releasePosition.X
         uiPreferences.LauncherYScale = 0
-        uiPreferences.LauncherYOffset = snapY
+        uiPreferences.LauncherYOffset = releasePosition.Y
         saveUiPreferences()
         updateScale()
     elseif input.UserInputType == Enum.UserInputType.Touch and heldFor >= 0.55 then
@@ -713,11 +724,12 @@ end)
 
 function Library:SetLogo(asset)
     if type(asset) == "number" then
-        launcher.Image = "rbxassetid://" .. asset
+        launcherLogo.Image = "rbxassetid://" .. asset
     elseif type(asset) == "string" then
-        launcher.Image = asset
+        launcherLogo.Image = asset
     end
-    launcherMark.Visible = launcher.Image == "" or launcher.Image == "rbxassetid://0"
+    launcherMark.Visible = launcherLogo.Image == ""
+        or launcherLogo.Image == "rbxassetid://0"
 end
 
 local notificationHost = create("Frame", {
@@ -940,10 +952,51 @@ function Library:CreateWindow(options)
     local content = create("Frame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 67),
-        Size = UDim2.new(1, 0, 1, -67),
+        Size = UDim2.new(1, 0, 1, -93),
         Parent = frame,
     })
     window.Content = content
+
+    local footer = create("Frame", {
+        BackgroundColor3 = Theme.Surface,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 1, -26),
+        Size = UDim2.new(1, 0, 0, 26),
+        Parent = frame,
+    })
+    create("Frame", {
+        BackgroundColor3 = Theme.Border,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 1),
+        Parent = footer,
+    })
+    local websiteButton = create("TextButton", {
+        AutoButtonColor = false,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0.62, 0, 1, 0),
+        Font = Enum.Font.GothamMedium,
+        Text = "rbxreverb.com",
+        TextColor3 = Theme.Accent,
+        TextSize = 10,
+        Parent = footer,
+    })
+    websiteButton.MouseButton1Click:Connect(function()
+        copyLink("Website", REVERB_WEBSITE)
+    end)
+    local discordButton = create("TextButton", {
+        AutoButtonColor = false,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.62, 0, 0, 0),
+        Size = UDim2.new(0.38, 0, 1, 0),
+        Font = Enum.Font.GothamMedium,
+        Text = "Discord",
+        TextColor3 = Theme.Text,
+        TextSize = 10,
+        Parent = footer,
+    })
+    discordButton.MouseButton1Click:Connect(function()
+        copyLink("Discord", REVERB_DISCORD)
+    end)
 
     function window:Show()
         self.Frame.Visible = true
