@@ -268,7 +268,7 @@ local launcher = create("ImageButton", {
     Name = "ReverbLauncher",
     AutoButtonColor = false,
     BackgroundColor3 = Theme.Background,
-    ClipsDescendants = true,
+    ClipsDescendants = false,
     Position = UDim2.new(0, 14, 0.5, -22),
     Size = UDim2.fromOffset(54, 54),
     Image = "",
@@ -608,6 +608,7 @@ updateScale = function()
         local clampedY = math.clamp(absolute.Y, 8, math.max(8, viewport.Y - renderedSize.Y - 8))
         window.Frame.Position = UDim2.fromOffset(clampedX, clampedY)
     end
+    positionPromoBubble()
     positionQuickMenu(viewport, mobile)
 end
 
@@ -689,6 +690,7 @@ UserInputService.InputChanged:Connect(function(input)
         launcherStartPosition.Y.Scale,
         launcherStartPosition.Y.Offset + delta.Y
     )
+    positionPromoBubble()
     if quickMenu.Visible then
         updateScale()
     end
@@ -731,6 +733,99 @@ function Library:SetLogo(asset)
     launcherMark.Visible = launcherLogo.Image == ""
         or launcherLogo.Image == "rbxassetid://0"
 end
+
+local promoBubble = create("TextButton", {
+    AnchorPoint = Vector2.new(0, 0.5),
+    AutoButtonColor = false,
+    BackgroundColor3 = Theme.Surface,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(1, 9, 0.5, 0),
+    Size = UDim2.fromOffset(148, 32),
+    Font = Enum.Font.GothamMedium,
+    Text = "Join our Discord",
+    TextColor3 = Theme.Text,
+    TextSize = 11,
+    TextTransparency = 1,
+    Visible = false,
+    ZIndex = 8,
+    Parent = launcher,
+})
+corner(promoBubble, 16)
+local promoStroke = stroke(promoBubble, Theme.Accent, 1)
+
+local promoDot = create("Frame", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Theme.Accent,
+    BorderSizePixel = 0,
+    Position = UDim2.fromOffset(13, 16),
+    Size = UDim2.fromOffset(6, 6),
+    ZIndex = 9,
+    Parent = promoBubble,
+})
+corner(promoDot, 3)
+
+local promoItems = {
+    { Text = "Join our Discord", Label = "Discord", Url = REVERB_DISCORD },
+    { Text = "Visit rbxreverb.com", Label = "Website", Url = REVERB_WEBSITE },
+}
+local promoIndex = 0
+local activePromo = promoItems[1]
+
+local function positionPromoBubble()
+    local camera = workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+    local centerX = launcher.AbsolutePosition.X + (launcher.AbsoluteSize.X / 2)
+    if centerX > viewport.X / 2 then
+        promoBubble.AnchorPoint = Vector2.new(1, 0.5)
+        promoBubble.Position = UDim2.new(0, -9, 0.5, 0)
+    else
+        promoBubble.AnchorPoint = Vector2.new(0, 0.5)
+        promoBubble.Position = UDim2.new(1, 9, 0.5, 0)
+    end
+end
+
+local function showNextPromo()
+    promoIndex = (promoIndex % #promoItems) + 1
+    activePromo = promoItems[promoIndex]
+    promoBubble.Text = "     " .. activePromo.Text
+    positionPromoBubble()
+    promoBubble.Visible = true
+    promoBubble.Size = UDim2.fromOffset(126, 28)
+    tween(promoBubble, 0.2, {
+        BackgroundTransparency = 0.04,
+        Size = UDim2.fromOffset(148, 32),
+        TextTransparency = 0,
+    })
+    tween(promoStroke, 0.2, { Transparency = 0.35 })
+
+    task.delay(5, function()
+        if promoBubble.Parent then
+            tween(promoBubble, 0.18, {
+                BackgroundTransparency = 1,
+                TextTransparency = 1,
+            })
+            tween(promoStroke, 0.18, { Transparency = 1 })
+            task.delay(0.2, function()
+                if promoBubble.Parent then
+                    promoBubble.Visible = false
+                end
+            end)
+        end
+    end)
+end
+
+promoBubble.MouseButton1Click:Connect(function()
+    copyLink(activePromo.Label, activePromo.Url)
+    promoBubble.Visible = false
+end)
+
+task.spawn(function()
+    task.wait(2.5)
+    while root.Parent do
+        showNextPromo()
+        task.wait(11)
+    end
+end)
 
 local notificationHost = create("Frame", {
     BackgroundTransparency = 1,
@@ -952,51 +1047,10 @@ function Library:CreateWindow(options)
     local content = create("Frame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 67),
-        Size = UDim2.new(1, 0, 1, -93),
+        Size = UDim2.new(1, 0, 1, -67),
         Parent = frame,
     })
     window.Content = content
-
-    local footer = create("Frame", {
-        BackgroundColor3 = Theme.Surface,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 1, -26),
-        Size = UDim2.new(1, 0, 0, 26),
-        Parent = frame,
-    })
-    create("Frame", {
-        BackgroundColor3 = Theme.Border,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 1),
-        Parent = footer,
-    })
-    local websiteButton = create("TextButton", {
-        AutoButtonColor = false,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0.62, 0, 1, 0),
-        Font = Enum.Font.GothamMedium,
-        Text = "rbxreverb.com",
-        TextColor3 = Theme.Accent,
-        TextSize = 10,
-        Parent = footer,
-    })
-    websiteButton.MouseButton1Click:Connect(function()
-        copyLink("Website", REVERB_WEBSITE)
-    end)
-    local discordButton = create("TextButton", {
-        AutoButtonColor = false,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0.62, 0, 0, 0),
-        Size = UDim2.new(0.38, 0, 1, 0),
-        Font = Enum.Font.GothamMedium,
-        Text = "Discord",
-        TextColor3 = Theme.Text,
-        TextSize = 10,
-        Parent = footer,
-    })
-    discordButton.MouseButton1Click:Connect(function()
-        copyLink("Discord", REVERB_DISCORD)
-    end)
 
     function window:Show()
         self.Frame.Visible = true

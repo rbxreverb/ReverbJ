@@ -35,8 +35,10 @@ the executor supports it. Mobile windows use the available viewport instead of
 shrinking desktop controls to an unusable size, and their existing pages remain
 scrollable.
 
-Every window also keeps `rbxreverb.com` and `Discord` visible in its footer, so
-players can discover the official links without opening Reverb Controls.
+The floating logo periodically shows a small clickable promotion bubble beside
+it, alternating between Discord and `rbxreverb.com`. The bubble follows the
+launcher and automatically opens on whichever side has room. Clicking it copies
+the relevant official link.
 
 ## Basic usage
 
