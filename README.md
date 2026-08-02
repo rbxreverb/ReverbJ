@@ -1,9 +1,10 @@
 # Reverb J
 
-Reverb J is a separate compact UI option for Reverb scripts. Its internal name is
-not shown to players. It is independent from the main `ReverbUI` library and is
-designed for low screen usage, touch support, low complexity, and beginner-friendly
-Lua.
+Reverb J is the preferred and primary UI library for new Reverb scripts. Its
+internal name is not shown to players. It is independent from the older
+`ReverbUI` library and is designed for low screen usage, touch support, low
+complexity, and beginner-friendly Lua. `ReverbUI` remains available only for
+legacy scripts that have not yet moved to Reverb J.
 
 ## Runtime
 
@@ -20,7 +21,7 @@ The floating launcher loads the existing Reverb logo once and caches it locally.
 `ReverbJ:SetLogo(assetId)` can override it later if a dedicated Roblox asset is
 uploaded.
 
-## Responsive launcher
+## Reverb Control Panel
 
 The Reverb logo is the shared control point for every ReverbJ window:
 
@@ -35,10 +36,12 @@ the executor supports it. Mobile windows use the available viewport instead of
 shrinking desktop controls to an unusable size, and their existing pages remain
 scrollable.
 
-The floating logo has two permanently available, compact satellite bubbles beside
-it: a Discord button and a website button. They follow the launcher, automatically
-move to whichever side has room, and copy the relevant official link when clicked.
-Both bubbles remain visible whether the main script UI is open or closed.
+The floating logo and its two satellite bubbles form the Reverb Control Panel.
+The main logo shows or hides the script UI; the Discord and website bubbles copy
+their official links. The satellites use a compact curved arrangement, follow the
+launcher, automatically move to whichever side has room, and remain visible whether
+the main script UI is open or closed. Desktop hover labels identify each link, and
+a temporary check mark confirms a successful copy.
 
 ## Basic usage
 

@@ -1,6 +1,8 @@
 --[[
     Reverb J
-    A separate, compact UI runtime for Reverb scripts.
+    The preferred, primary compact UI runtime for Reverb scripts.
+
+    The older ReverbUI runtime is retained only for legacy scripts.
 
     "Reverb J" is an internal project name and is never displayed in the UI.
 ]]
@@ -265,7 +267,7 @@ local windowLayer = create("Frame", {
 })
 
 local launcher = create("ImageButton", {
-    Name = "ReverbLauncher",
+    Name = "ReverbControlPanel",
     AutoButtonColor = false,
     BackgroundColor3 = Theme.Background,
     ClipsDescendants = false,
@@ -388,7 +390,7 @@ local function loadDefaultLogo()
 end
 
 local quickMenu = create("Frame", {
-    Name = "ReverbQuickMenu",
+    Name = "ReverbSettings",
     BackgroundColor3 = Theme.Background,
     Size = UDim2.fromOffset(238, 268),
     Visible = false,
@@ -412,7 +414,7 @@ create("TextLabel", {
     Position = UDim2.fromOffset(14, 10),
     Size = UDim2.new(1, -28, 0, 22),
     Font = Enum.Font.GothamBold,
-    Text = "REVERB CONTROLS",
+    Text = "REVERB SETTINGS",
     TextColor3 = Theme.Text,
     TextSize = 13,
     TextXAlignment = Enum.TextXAlignment.Left,
@@ -476,30 +478,27 @@ local function copyLink(label, url)
         local ok = pcall(setclipboard, url)
         if ok then
             Library:Notify(label .. " link copied", 2.5)
-            return
+            return true
         end
     end
     Library:Notify(url, 5)
+    return false
 end
 
 -- Permanent, lightweight calls-to-action attached to the launcher. The two
 -- satellite bubbles keep the official links available without taking space
 -- inside each game's controls.
 local promoTray = create("Frame", {
+    Name = "ControlPanelLinks",
     AnchorPoint = Vector2.new(0, 0.5),
     BackgroundTransparency = 1,
     Position = UDim2.new(1, 8, 0.5, 0),
-    Size = UDim2.fromOffset(34, 74),
+    Size = UDim2.fromOffset(50, 74),
     Visible = true,
     ZIndex = 8,
     Parent = launcher,
 })
-create("UIListLayout", {
-    Padding = UDim.new(0, 4),
-    SortOrder = Enum.SortOrder.LayoutOrder,
-    VerticalAlignment = Enum.VerticalAlignment.Center,
-    Parent = promoTray,
-})
+local promoBubbles = {}
 
 local function promoBubble(kind, label, url)
     local button = create("TextButton", {
@@ -507,27 +506,39 @@ local function promoBubble(kind, label, url)
         BackgroundColor3 = Theme.Surface,
         BackgroundTransparency = 0.06,
         Size = UDim2.fromOffset(34, 34),
+        Position = UDim2.fromOffset(0, 0),
         Text = "",
         ZIndex = 9,
         Parent = promoTray,
     })
     corner(button, 17)
-    stroke(button, Theme.Accent, 0.48)
+    local buttonStroke = stroke(button, Theme.Accent, 0.58)
+    local buttonScale = create("UIScale", {
+        Scale = 1,
+        Parent = button,
+    })
+    local iconRoot = create("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        ZIndex = 10,
+        Parent = button,
+    })
 
     if kind == "Discord" then
         local discord = create("Frame", {
             AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = Color3.fromRGB(88, 101, 242),
-            BorderSizePixel = 0,
+            BackgroundTransparency = 1,
             Position = UDim2.fromScale(0.5, 0.5),
             Size = UDim2.fromOffset(21, 15),
             ZIndex = 10,
-            Parent = button,
+            Parent = iconRoot,
         })
         corner(discord, 7)
+        local discordStroke = stroke(discord, Theme.Accent, 0)
+        discordStroke.Thickness = 1.5
         for _, x in ipairs({ 7, 14 }) do
             local eye = create("Frame", {
-                BackgroundColor3 = Theme.Text,
+                BackgroundColor3 = Theme.Accent,
                 BorderSizePixel = 0,
                 Position = UDim2.fromOffset(x - 2, 6),
                 Size = UDim2.fromOffset(3, 3),
@@ -543,7 +554,7 @@ local function promoBubble(kind, label, url)
             Position = UDim2.fromScale(0.5, 0.5),
             Size = UDim2.fromOffset(19, 19),
             ZIndex = 10,
-            Parent = button,
+            Parent = iconRoot,
         })
         corner(globe, 10)
         local globeStroke = stroke(globe, Theme.Accent, 0)
@@ -568,21 +579,68 @@ local function promoBubble(kind, label, url)
         })
     end
 
+    local copiedMark = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        Font = Enum.Font.GothamBold,
+        Text = "✓",
+        TextColor3 = Theme.Accent,
+        TextSize = 18,
+        Visible = false,
+        ZIndex = 12,
+        Parent = button,
+    })
+    local tooltip = create("TextLabel", {
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.03,
+        Position = UDim2.new(1, 7, 0.5, 0),
+        Size = UDim2.fromOffset(label == "Discord" and 61 or 59, 22),
+        Font = Enum.Font.GothamMedium,
+        Text = label,
+        TextColor3 = Theme.Text,
+        TextSize = 10,
+        Visible = false,
+        ZIndex = 20,
+        Parent = button,
+    })
+    corner(tooltip, 7)
+    stroke(tooltip, Theme.Border, 0.2)
+
     button.MouseEnter:Connect(function()
+        tooltip.Visible = true
         tween(button, 0.12, {
             BackgroundColor3 = Theme.Hover,
             BackgroundTransparency = 0,
         })
+        tween(buttonStroke, 0.12, { Transparency = 0.08 })
+        tween(buttonScale, 0.12, { Scale = 1.08 })
     end)
     button.MouseLeave:Connect(function()
+        tooltip.Visible = false
         tween(button, 0.12, {
             BackgroundColor3 = Theme.Surface,
             BackgroundTransparency = 0.06,
         })
+        tween(buttonStroke, 0.12, { Transparency = 0.58 })
+        tween(buttonScale, 0.12, { Scale = 1 })
     end)
     button.MouseButton1Click:Connect(function()
-        copyLink(label, url)
+        if copyLink(label, url) then
+            iconRoot.Visible = false
+            copiedMark.Visible = true
+            task.delay(1.15, function()
+                if button.Parent then
+                    copiedMark.Visible = false
+                    iconRoot.Visible = true
+                end
+            end)
+        end
     end)
+    table.insert(promoBubbles, {
+        Button = button,
+        Tooltip = tooltip,
+    })
 end
 
 promoBubble("Discord", "Discord", REVERB_DISCORD)
@@ -595,9 +653,21 @@ local function positionPromoTray()
     if centerX > viewport.X / 2 then
         promoTray.AnchorPoint = Vector2.new(1, 0.5)
         promoTray.Position = UDim2.new(0, -8, 0.5, 0)
+        promoBubbles[1].Button.Position = UDim2.fromOffset(16, 0)
+        promoBubbles[2].Button.Position = UDim2.fromOffset(0, 40)
+        for _, item in ipairs(promoBubbles) do
+            item.Tooltip.AnchorPoint = Vector2.new(1, 0.5)
+            item.Tooltip.Position = UDim2.new(0, -7, 0.5, 0)
+        end
     else
         promoTray.AnchorPoint = Vector2.new(0, 0.5)
         promoTray.Position = UDim2.new(1, 8, 0.5, 0)
+        promoBubbles[1].Button.Position = UDim2.fromOffset(0, 0)
+        promoBubbles[2].Button.Position = UDim2.fromOffset(16, 40)
+        for _, item in ipairs(promoBubbles) do
+            item.Tooltip.AnchorPoint = Vector2.new(0, 0.5)
+            item.Tooltip.Position = UDim2.new(1, 7, 0.5, 0)
+        end
     end
 end
 
