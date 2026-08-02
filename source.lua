@@ -482,15 +482,15 @@ local function copyLink(label, url)
     Library:Notify(url, 5)
 end
 
--- Permanent, lightweight calls-to-action attached to the launcher. Keeping
--- them as two quiet chips makes the official links discoverable without
--- occupying any space inside each game's controls.
+-- Permanent, lightweight calls-to-action attached to the launcher. The two
+-- satellite bubbles keep the official links available without taking space
+-- inside each game's controls.
 local promoTray = create("Frame", {
     AnchorPoint = Vector2.new(0, 0.5),
     BackgroundTransparency = 1,
     Position = UDim2.new(1, 8, 0.5, 0),
-    Size = UDim2.fromOffset(112, 56),
-    Visible = false,
+    Size = UDim2.fromOffset(34, 74),
+    Visible = true,
     ZIndex = 8,
     Parent = launcher,
 })
@@ -501,44 +501,92 @@ create("UIListLayout", {
     Parent = promoTray,
 })
 
-local function promoChip(text, label, url)
+local function promoBubble(kind, label, url)
     local button = create("TextButton", {
         AutoButtonColor = false,
         BackgroundColor3 = Theme.Surface,
-        BackgroundTransparency = 0.12,
-        Size = UDim2.new(1, 0, 0, 26),
-        Font = Enum.Font.GothamMedium,
-        Text = "  " .. text,
-        TextColor3 = Theme.Text,
-        TextSize = 10,
+        BackgroundTransparency = 0.06,
+        Size = UDim2.fromOffset(34, 34),
+        Text = "",
         ZIndex = 9,
         Parent = promoTray,
     })
-    corner(button, 13)
-    stroke(button, Theme.Accent, 0.62)
-    local dot = create("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Theme.Accent,
-        BorderSizePixel = 0,
-        Position = UDim2.fromOffset(12, 13),
-        Size = UDim2.fromOffset(5, 5),
-        ZIndex = 10,
-        Parent = button,
-    })
-    corner(dot, 3)
+    corner(button, 17)
+    stroke(button, Theme.Accent, 0.48)
+
+    if kind == "Discord" then
+        local discord = create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundColor3 = Color3.fromRGB(88, 101, 242),
+            BorderSizePixel = 0,
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromOffset(21, 15),
+            ZIndex = 10,
+            Parent = button,
+        })
+        corner(discord, 7)
+        for _, x in ipairs({ 7, 14 }) do
+            local eye = create("Frame", {
+                BackgroundColor3 = Theme.Text,
+                BorderSizePixel = 0,
+                Position = UDim2.fromOffset(x - 2, 6),
+                Size = UDim2.fromOffset(3, 3),
+                ZIndex = 11,
+                Parent = discord,
+            })
+            corner(eye, 2)
+        end
+    else
+        local globe = create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromOffset(19, 19),
+            ZIndex = 10,
+            Parent = button,
+        })
+        corner(globe, 10)
+        local globeStroke = stroke(globe, Theme.Accent, 0)
+        globeStroke.Thickness = 1.5
+        create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundColor3 = Theme.Accent,
+            BorderSizePixel = 0,
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromOffset(1, 17),
+            ZIndex = 11,
+            Parent = globe,
+        })
+        create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundColor3 = Theme.Accent,
+            BorderSizePixel = 0,
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromOffset(17, 1),
+            ZIndex = 11,
+            Parent = globe,
+        })
+    end
+
     button.MouseEnter:Connect(function()
-        tween(button, 0.12, { BackgroundTransparency = 0 })
+        tween(button, 0.12, {
+            BackgroundColor3 = Theme.Hover,
+            BackgroundTransparency = 0,
+        })
     end)
     button.MouseLeave:Connect(function()
-        tween(button, 0.12, { BackgroundTransparency = 0.12 })
+        tween(button, 0.12, {
+            BackgroundColor3 = Theme.Surface,
+            BackgroundTransparency = 0.06,
+        })
     end)
     button.MouseButton1Click:Connect(function()
         copyLink(label, url)
     end)
 end
 
-promoChip("Join Discord", "Discord", REVERB_DISCORD)
-promoChip("Visit Website", "Website", REVERB_WEBSITE)
+promoBubble("Discord", "Discord", REVERB_DISCORD)
+promoBubble("Website", "Website", REVERB_WEBSITE)
 
 local function positionPromoTray()
     local camera = workspace.CurrentCamera
@@ -686,7 +734,7 @@ end
 function Library:SetOpen(isOpen)
     self.Open = isOpen == true
     windowLayer.Visible = self.Open
-    promoTray.Visible = not self.Open
+    promoTray.Visible = true
     openButton.Text = self.Open and "Hide Script UI" or "Open Script UI"
     tween(launcherStroke, 0.14, {
         Transparency = self.Open and 0 or 0.55,

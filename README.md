@@ -35,11 +35,10 @@ the executor supports it. Mobile windows use the available viewport instead of
 shrinking desktop controls to an unusable size, and their existing pages remain
 scrollable.
 
-The floating logo has two permanently available, compact action chips beside it:
-`Join Discord` and `Visit Website`. They follow the launcher, automatically move
-to whichever side has room, and copy the relevant official link when clicked.
-The chips appear while the main script UI is closed and stay hidden while it is
-open.
+The floating logo has two permanently available, compact satellite bubbles beside
+it: a Discord button and a website button. They follow the launcher, automatically
+move to whichever side has room, and copy the relevant official link when clicked.
+Both bubbles remain visible whether the main script UI is open or closed.
 
 ## Basic usage
 
