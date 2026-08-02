@@ -30,7 +30,7 @@ The Reverb logo is the shared control point for every ReverbJ window:
 - Right-click it on desktop, or hold it on mobile, to open Reverb Controls.
 - Press `RightControl` on desktop to show or hide the script UI.
 
-Reverb Controls includes the official website and Discord invite, UI scaling,
+Reverb Settings includes the official website and Discord invite, UI scaling,
 and a reset-position action. Link buttons copy their URL to the clipboard when
 the executor supports it. Mobile windows use the available viewport instead of
 shrinking desktop controls to an unusable size, and their existing pages remain
@@ -43,6 +43,10 @@ launcher, automatically move to whichever side has room, and remain visible whet
 the main script UI is open or closed. They use cached, high-resolution Discord and
 globe icon assets rather than text or improvised shapes. Desktop hover labels
 identify each link, and a temporary check mark confirms a successful copy.
+
+When the loader grants time-limited Emergency Access, Reverb J displays one
+notification explaining that temporary keyless access is active and Premium
+features remain locked.
 
 ## Basic usage
 

@@ -2007,6 +2007,12 @@ function Library:CreateWindow(options)
             window.Config:Load()
         end)
     end
+    if environment().ReverbEmergencyAccess == true and not self._EmergencyNoticeShown then
+        self._EmergencyNoticeShown = true
+        task.defer(function()
+            self:Notify("Temporary keyless access is active. Premium features remain locked.", 5)
+        end)
+    end
     return window
 end
 
