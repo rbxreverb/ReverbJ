@@ -523,61 +523,26 @@ local function promoBubble(kind, label, url)
         ZIndex = 10,
         Parent = button,
     })
-
-    if kind == "Discord" then
-        local discord = create("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundTransparency = 1,
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(21, 15),
-            ZIndex = 10,
-            Parent = iconRoot,
-        })
-        corner(discord, 7)
-        local discordStroke = stroke(discord, Theme.Accent, 0)
-        discordStroke.Thickness = 1.5
-        for _, x in ipairs({ 7, 14 }) do
-            local eye = create("Frame", {
-                BackgroundColor3 = Theme.Accent,
-                BorderSizePixel = 0,
-                Position = UDim2.fromOffset(x - 2, 6),
-                Size = UDim2.fromOffset(3, 3),
-                ZIndex = 11,
-                Parent = discord,
-            })
-            corner(eye, 2)
-        end
-    else
-        local globe = create("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundTransparency = 1,
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(19, 19),
-            ZIndex = 10,
-            Parent = iconRoot,
-        })
-        corner(globe, 10)
-        local globeStroke = stroke(globe, Theme.Accent, 0)
-        globeStroke.Thickness = 1.5
-        create("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = Theme.Accent,
-            BorderSizePixel = 0,
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(1, 17),
-            ZIndex = 11,
-            Parent = globe,
-        })
-        create("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = Theme.Accent,
-            BorderSizePixel = 0,
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(17, 1),
-            ZIndex = 11,
-            Parent = globe,
-        })
-    end
+    local iconImage = create("ImageLabel", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(21, 21),
+        Image = "",
+        ScaleType = Enum.ScaleType.Fit,
+        ZIndex = 11,
+        Parent = iconRoot,
+    })
+    local iconFallback = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        Font = Enum.Font.GothamBold,
+        Text = kind == "Discord" and "D" or "W",
+        TextColor3 = Theme.Accent,
+        TextSize = 15,
+        ZIndex = 10,
+        Parent = iconRoot,
+    })
 
     local copiedMark = create("TextLabel", {
         BackgroundTransparency = 1,
@@ -639,12 +604,54 @@ local function promoBubble(kind, label, url)
     end)
     table.insert(promoBubbles, {
         Button = button,
+        Kind = kind,
+        Icon = iconImage,
+        Fallback = iconFallback,
         Tooltip = tooltip,
     })
 end
 
 promoBubble("Discord", "Discord", REVERB_DISCORD)
 promoBubble("Website", "Website", REVERB_WEBSITE)
+
+local function loadControlPanelIcons()
+    local customAsset = getcustomasset or getsynasset
+    if type(customAsset) ~= "function"
+        or type(writefile) ~= "function"
+        or type(isfile) ~= "function"
+    then
+        return
+    end
+
+    task.spawn(function()
+        pcall(function()
+            if type(makefolder) == "function" then
+                if type(isfolder) ~= "function" or not isfolder("ReverbJ") then
+                    makefolder("ReverbJ")
+                end
+                if type(isfolder) ~= "function" or not isfolder("ReverbJ/Assets") then
+                    makefolder("ReverbJ/Assets")
+                end
+            end
+
+            for _, item in ipairs(promoBubbles) do
+                local fileName = item.Kind .. "Icon.png"
+                local path = "ReverbJ/Assets/" .. fileName
+                if not isfile(path) then
+                    writefile(
+                        path,
+                        game:HttpGet(
+                            "https://raw.githubusercontent.com/rbxreverb/ReverbJ/refs/heads/main/assets/"
+                            .. fileName
+                        )
+                    )
+                end
+                item.Icon.Image = customAsset(path)
+                item.Fallback.Visible = false
+            end
+        end)
+    end)
+end
 
 local function positionPromoTray()
     local camera = workspace.CurrentCamera
@@ -2032,6 +2039,7 @@ end
 workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watchCamera)
 watchCamera()
 loadDefaultLogo()
+loadControlPanelIcons()
 
 local env = environment()
 local previousLibrary = env.ReverbCompactLibrary

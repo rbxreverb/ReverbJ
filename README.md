@@ -40,8 +40,9 @@ The floating logo and its two satellite bubbles form the Reverb Control Panel.
 The main logo shows or hides the script UI; the Discord and website bubbles copy
 their official links. The satellites use a compact curved arrangement, follow the
 launcher, automatically move to whichever side has room, and remain visible whether
-the main script UI is open or closed. Desktop hover labels identify each link, and
-a temporary check mark confirms a successful copy.
+the main script UI is open or closed. They use cached, high-resolution Discord and
+globe icon assets rather than text or improvised shapes. Desktop hover labels
+identify each link, and a temporary check mark confirms a successful copy.
 
 ## Basic usage
 
@@ -153,3 +154,9 @@ local Tools = ReverbJ:CreateWindow({
 - Subtle short tweens only.
 - No themes, external icon pack, blur, gradients, or heavy decoration.
 - Reverb black, blue, white, and muted-grey palette only.
+
+## Icon attribution
+
+The Discord and globe control-panel icons are derived from Font Awesome Free
+7.3.1 and used under the CC BY 4.0 icon license. They are recolored to match the
+Reverb palette; the original SVG sources are retained in `assets`.
