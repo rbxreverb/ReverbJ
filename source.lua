@@ -1268,7 +1268,7 @@ function Library:CreateWindow(options)
             window:SelectTab(tab)
         end)
 
-        local function addLabel(text, color, size)
+        local function addLabel(text, color, size, parent)
             local label = create("TextLabel", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
@@ -1279,7 +1279,7 @@ function Library:CreateWindow(options)
                 TextSize = size or 11,
                 TextWrapped = true,
                 TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = tab.Container,
+                Parent = parent or tab.Container,
             })
             return label
         end
@@ -1943,7 +1943,7 @@ function Library:CreateWindow(options)
         end
 
         function tab:Label(text)
-            return addLabel(text, Theme.Muted, 10)
+            return addLabel(text, Theme.Muted, 10, self.Container)
         end
 
         function tab:Paragraph(title, text)
