@@ -1287,6 +1287,7 @@ function Library:CreateWindow(options)
         function tab:Section(sectionName, collapsed)
             local section = {}
             self.SectionCount = (self.SectionCount or 0) + 1
+            local isChangelogSection = self.Name:lower() == "changelog"
             local shell = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
@@ -1294,74 +1295,90 @@ function Library:CreateWindow(options)
                 Parent = self.Container,
             })
             local layout = create("UIListLayout", {
-                Padding = UDim.new(0, 4),
+                Padding = UDim.new(0, isChangelogSection and 4 or 5),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = shell,
             })
             local sectionButton = create("TextButton", {
                 AutoButtonColor = false,
                 BackgroundColor3 = Theme.Raised,
-                BackgroundTransparency = 0,
+                BackgroundTransparency = isChangelogSection and 0 or 1,
                 LayoutOrder = 1,
-                Size = UDim2.new(1, 0, 0, 30),
+                Size = UDim2.new(1, 0, 0, isChangelogSection and 30 or 24),
                 Font = Enum.Font.GothamMedium,
-                Text = "  " .. tostring(sectionName or "Section"),
-                TextColor3 = Theme.Text,
-                TextSize = 11,
+                Text = (isChangelogSection and "  " or "")
+                    .. tostring(sectionName or "Section"),
+                TextColor3 = isChangelogSection and Theme.Text or Theme.Muted,
+                TextSize = isChangelogSection and 11 or 10,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = shell,
             })
-            corner(sectionButton, 5)
-            stroke(sectionButton, Theme.Border, 0.2)
-            local sectionChevron = create("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.new(1, -28, 0, 0),
-                Size = UDim2.new(0, 24, 1, 0),
-                Font = Enum.Font.GothamBold,
-                Text = "v",
-                TextColor3 = Theme.Muted,
-                TextSize = 11,
-                Parent = sectionButton,
-            })
+            local sectionChevron
+            if isChangelogSection then
+                corner(sectionButton, 5)
+                stroke(sectionButton, Theme.Border, 0.2)
+                sectionChevron = create("TextLabel", {
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -28, 0, 0),
+                    Size = UDim2.new(0, 24, 1, 0),
+                    Font = Enum.Font.GothamBold,
+                    Text = "v",
+                    TextColor3 = Theme.Muted,
+                    TextSize = 11,
+                    Parent = sectionButton,
+                })
+            end
             local body = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundColor3 = Theme.Surface,
-                BackgroundTransparency = 0,
-                ClipsDescendants = true,
+                BackgroundTransparency = isChangelogSection and 0 or 1,
+                ClipsDescendants = isChangelogSection,
                 LayoutOrder = 2,
                 Size = UDim2.new(1, 0, 0, 0),
                 Parent = shell,
             })
-            corner(body, 5)
-            stroke(body, Theme.Border, 0.35)
-            padding(body, 8, 8, 8, 8)
+            if isChangelogSection then
+                corner(body, 5)
+                stroke(body, Theme.Border, 0.35)
+                padding(body, 8, 8, 8, 8)
+            end
             create("UIListLayout", {
                 Padding = UDim.new(0, 5),
                 Parent = body,
             })
             local defaultCollapsed = collapsed == nil
-                and self.Name:lower() == "changelog"
+                and isChangelogSection
                 and self.SectionCount > 1
             section.Open = collapsed ~= true and not defaultCollapsed
 
             local function updateSectionState()
                 body.Visible = section.Open
-                sectionChevron.Text = section.Open and "v" or ">"
-                sectionChevron.TextColor3 = section.Open and Theme.Accent or Theme.Muted
-                sectionButton.BackgroundColor3 = section.Open
-                    and Theme.Hover
-                    or Theme.Raised
+                if isChangelogSection then
+                    sectionChevron.Text = section.Open and "v" or ">"
+                    sectionChevron.TextColor3 = section.Open
+                        and Theme.Accent
+                        or Theme.Muted
+                    sectionButton.BackgroundColor3 = section.Open
+                        and Theme.Hover
+                        or Theme.Raised
+                else
+                    sectionButton.TextColor3 = section.Open
+                        and Theme.Muted
+                        or Theme.Text
+                end
             end
 
             updateSectionState()
-            sectionButton.MouseEnter:Connect(function()
-                tween(sectionButton, 0.1, { BackgroundColor3 = Theme.Hover })
-            end)
-            sectionButton.MouseLeave:Connect(function()
-                tween(sectionButton, 0.1, {
-                    BackgroundColor3 = section.Open and Theme.Hover or Theme.Raised,
-                })
-            end)
+            if isChangelogSection then
+                sectionButton.MouseEnter:Connect(function()
+                    tween(sectionButton, 0.1, { BackgroundColor3 = Theme.Hover })
+                end)
+                sectionButton.MouseLeave:Connect(function()
+                    tween(sectionButton, 0.1, {
+                        BackgroundColor3 = section.Open and Theme.Hover or Theme.Raised,
+                    })
+                end)
+            end
             sectionButton.MouseButton1Click:Connect(function()
                 section.Open = not section.Open
                 updateSectionState()
