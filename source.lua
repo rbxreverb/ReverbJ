@@ -1286,6 +1286,7 @@ function Library:CreateWindow(options)
 
         function tab:Section(sectionName, collapsed)
             local section = {}
+            self.SectionCount = (self.SectionCount or 0) + 1
             local shell = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
@@ -1293,40 +1294,77 @@ function Library:CreateWindow(options)
                 Parent = self.Container,
             })
             local layout = create("UIListLayout", {
-                Padding = UDim.new(0, 5),
+                Padding = UDim.new(0, 4),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = shell,
             })
             local sectionButton = create("TextButton", {
                 AutoButtonColor = false,
-                BackgroundTransparency = 1,
+                BackgroundColor3 = Theme.Raised,
+                BackgroundTransparency = 0,
                 LayoutOrder = 1,
-                Size = UDim2.new(1, 0, 0, 24),
+                Size = UDim2.new(1, 0, 0, 30),
                 Font = Enum.Font.GothamMedium,
-                Text = tostring(sectionName or "Section"),
-                TextColor3 = Theme.Muted,
-                TextSize = 10,
+                Text = "  " .. tostring(sectionName or "Section"),
+                TextColor3 = Theme.Text,
+                TextSize = 11,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = shell,
             })
+            corner(sectionButton, 5)
+            stroke(sectionButton, Theme.Border, 0.2)
+            local sectionChevron = create("TextLabel", {
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, -28, 0, 0),
+                Size = UDim2.new(0, 24, 1, 0),
+                Font = Enum.Font.GothamBold,
+                Text = "v",
+                TextColor3 = Theme.Muted,
+                TextSize = 11,
+                Parent = sectionButton,
+            })
             local body = create("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
+                BackgroundColor3 = Theme.Surface,
+                BackgroundTransparency = 0,
+                ClipsDescendants = true,
                 LayoutOrder = 2,
                 Size = UDim2.new(1, 0, 0, 0),
                 Parent = shell,
             })
+            corner(body, 5)
+            stroke(body, Theme.Border, 0.35)
+            padding(body, 8, 8, 8, 8)
             create("UIListLayout", {
                 Padding = UDim.new(0, 5),
                 Parent = body,
             })
-            section.Open = collapsed ~= true
-            body.Visible = section.Open
-            sectionButton.TextColor3 = section.Open and Theme.Muted or Theme.Text
+            local defaultCollapsed = collapsed == nil
+                and self.Name:lower() == "changelog"
+                and self.SectionCount > 1
+            section.Open = collapsed ~= true and not defaultCollapsed
+
+            local function updateSectionState()
+                body.Visible = section.Open
+                sectionChevron.Text = section.Open and "v" or ">"
+                sectionChevron.TextColor3 = section.Open and Theme.Accent or Theme.Muted
+                sectionButton.BackgroundColor3 = section.Open
+                    and Theme.Hover
+                    or Theme.Raised
+            end
+
+            updateSectionState()
+            sectionButton.MouseEnter:Connect(function()
+                tween(sectionButton, 0.1, { BackgroundColor3 = Theme.Hover })
+            end)
+            sectionButton.MouseLeave:Connect(function()
+                tween(sectionButton, 0.1, {
+                    BackgroundColor3 = section.Open and Theme.Hover or Theme.Raised,
+                })
+            end)
             sectionButton.MouseButton1Click:Connect(function()
                 section.Open = not section.Open
-                body.Visible = section.Open
-                sectionButton.TextColor3 = section.Open and Theme.Muted or Theme.Text
+                updateSectionState()
             end)
             section.Container = body
             setmetatable(section, { __index = tab })
