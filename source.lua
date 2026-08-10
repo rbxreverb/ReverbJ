@@ -269,7 +269,7 @@ local windowLayer = create("Frame", {
 local launcher = create("ImageButton", {
     Name = "ReverbControlPanel",
     AutoButtonColor = false,
-    BackgroundColor3 = Theme.Background,
+    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
     ClipsDescendants = false,
     Position = UDim2.new(0, 14, 0.5, -22),
     Size = UDim2.fromOffset(54, 54),
@@ -503,8 +503,8 @@ local promoBubbles = {}
 local function promoBubble(kind, label, url)
     local button = create("TextButton", {
         AutoButtonColor = false,
-        BackgroundColor3 = Theme.Surface,
-        BackgroundTransparency = 0.06,
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0,
         Size = UDim2.fromOffset(34, 34),
         Position = UDim2.fromOffset(0, 0),
         Text = "",
@@ -512,7 +512,7 @@ local function promoBubble(kind, label, url)
         Parent = promoTray,
     })
     corner(button, 17)
-    local buttonStroke = stroke(button, Theme.Accent, 0.58)
+    local buttonStroke = stroke(button, Theme.Accent, 1)
     local buttonScale = create("UIScale", {
         Scale = 1,
         Parent = button,
@@ -575,19 +575,18 @@ local function promoBubble(kind, label, url)
     button.MouseEnter:Connect(function()
         tooltip.Visible = true
         tween(button, 0.12, {
-            BackgroundColor3 = Theme.Hover,
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
             BackgroundTransparency = 0,
         })
-        tween(buttonStroke, 0.12, { Transparency = 0.08 })
         tween(buttonScale, 0.12, { Scale = 1.08 })
     end)
     button.MouseLeave:Connect(function()
         tooltip.Visible = false
         tween(button, 0.12, {
-            BackgroundColor3 = Theme.Surface,
-            BackgroundTransparency = 0.06,
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BackgroundTransparency = 0,
         })
-        tween(buttonStroke, 0.12, { Transparency = 0.58 })
+        buttonStroke.Transparency = 1
         tween(buttonScale, 0.12, { Scale = 1 })
     end)
     button.MouseButton1Click:Connect(function()
@@ -656,26 +655,47 @@ end
 local function positionPromoTray()
     local camera = workspace.CurrentCamera
     local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+    local mobile = UserInputService.TouchEnabled and viewport.X < 900
+    local trayGap = mobile and 6 or 8
+    local stagger = mobile and 12 or 16
+    local rowOffset = mobile and 30 or 40
     local centerX = launcher.AbsolutePosition.X + (launcher.AbsoluteSize.X / 2)
     if centerX > viewport.X / 2 then
         promoTray.AnchorPoint = Vector2.new(1, 0.5)
-        promoTray.Position = UDim2.new(0, -8, 0.5, 0)
-        promoBubbles[1].Button.Position = UDim2.fromOffset(16, 0)
-        promoBubbles[2].Button.Position = UDim2.fromOffset(0, 40)
+        promoTray.Position = UDim2.new(0, -trayGap, 0.5, 0)
+        promoBubbles[1].Button.Position = UDim2.fromOffset(stagger, 0)
+        promoBubbles[2].Button.Position = UDim2.fromOffset(0, rowOffset)
         for _, item in ipairs(promoBubbles) do
             item.Tooltip.AnchorPoint = Vector2.new(1, 0.5)
             item.Tooltip.Position = UDim2.new(0, -7, 0.5, 0)
         end
     else
         promoTray.AnchorPoint = Vector2.new(0, 0.5)
-        promoTray.Position = UDim2.new(1, 8, 0.5, 0)
+        promoTray.Position = UDim2.new(1, trayGap, 0.5, 0)
         promoBubbles[1].Button.Position = UDim2.fromOffset(0, 0)
-        promoBubbles[2].Button.Position = UDim2.fromOffset(16, 40)
+        promoBubbles[2].Button.Position = UDim2.fromOffset(stagger, rowOffset)
         for _, item in ipairs(promoBubbles) do
             item.Tooltip.AnchorPoint = Vector2.new(0, 0.5)
             item.Tooltip.Position = UDim2.new(1, 7, 0.5, 0)
         end
     end
+end
+
+local function clampLauncherToViewport(viewport, mobile)
+    local absolute = launcher.AbsolutePosition
+    local size = launcher.AbsoluteSize
+    local verticalMargin = mobile and 16 or 18
+    local clampedX = math.clamp(
+        absolute.X,
+        8,
+        math.max(8, viewport.X - size.X - 8)
+    )
+    local clampedY = math.clamp(
+        absolute.Y,
+        verticalMargin,
+        math.max(verticalMargin, viewport.Y - size.Y - verticalMargin)
+    )
+    launcher.Position = UDim2.fromOffset(clampedX, clampedY)
 end
 
 local openButton
@@ -775,11 +795,22 @@ updateScale = function()
     local camera = workspace.CurrentCamera
     local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
     local mobile = UserInputService.TouchEnabled and viewport.X < 900
-    local launcherSize = mobile and 60 or 54
+    local launcherSize = mobile and 41 or 54
+    local bubbleSize = mobile and 26 or 34
+    local iconSize = mobile and 16 or 21
     menuStatus.Text = mobile and "Hold logo for menu  |  Connected"
         or "RightCtrl  |  Connected"
     launcher.Size = UDim2.fromOffset(launcherSize, launcherSize)
     launcher:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(0, launcherSize / 2)
+    promoTray.Size = UDim2.fromOffset(mobile and 38 or 50, mobile and 56 or 74)
+    for _, item in ipairs(promoBubbles) do
+        item.Button.Size = UDim2.fromOffset(bubbleSize, bubbleSize)
+        item.Button:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(
+            0,
+            bubbleSize / 2
+        )
+        item.Icon.Size = UDim2.fromOffset(iconSize, iconSize)
+    end
     for _, window in ipairs(Library.Windows) do
         local scale
         if mobile then
@@ -804,6 +835,7 @@ updateScale = function()
         local clampedY = math.clamp(absolute.Y, 8, math.max(8, viewport.Y - renderedSize.Y - 8))
         window.Frame.Position = UDim2.fromOffset(clampedX, clampedY)
     end
+    clampLauncherToViewport(viewport, mobile)
     positionPromoTray()
     positionQuickMenu(viewport, mobile)
 end
@@ -814,8 +846,8 @@ function Library:SetOpen(isOpen)
     promoTray.Visible = true
     openButton.Text = self.Open and "Hide Script UI" or "Open Script UI"
     tween(launcherStroke, 0.14, {
-        Transparency = self.Open and 0 or 0.55,
-        Thickness = self.Open and 2 or 1,
+        Transparency = self.Open and 0 or 1,
+        Thickness = 2,
     })
 end
 
@@ -887,6 +919,10 @@ UserInputService.InputChanged:Connect(function(input)
         launcherStartPosition.Y.Scale,
         launcherStartPosition.Y.Offset + delta.Y
     )
+    local camera = workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+    local mobile = UserInputService.TouchEnabled and viewport.X < 900
+    clampLauncherToViewport(viewport, mobile)
     positionPromoTray()
     if quickMenu.Visible then
         updateScale()
