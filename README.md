@@ -134,8 +134,13 @@ Settings:Toggle("Remember active settings", false, function(enabled)
 end)
 ```
 
-When enabled, supported flagged controls are stored using the executor filesystem.
-Nothing is written while remembering is disabled.
+When a user enables **Remember active settings**, that opt-in is stored separately
+for the script. On later sessions the toggle starts enabled and the saved flagged
+controls load automatically, including their callbacks so the restored features
+actually become active. Users who have never enabled it remain opted out.
+Turning it off persists that choice and stops further control-value writes.
+Existing saved configurations from older Reverb J versions are treated as a
+previous opt-in so they continue loading after this upgrade.
 
 ## Multiple windows
 

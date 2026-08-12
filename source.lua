@@ -24,7 +24,7 @@ local CoreGui = Services.CoreGui
 local Library = {
     Windows = {},
     Open = true,
-    Version = "0.1.0",
+    Version = "0.1.1",
     AntiAfkEnabled = true,
     _AntiAfkConnection = nil,
     _AntiAfkControls = {},
@@ -1089,7 +1089,10 @@ local function configApi(window)
         for flag, value in pairs(values) do
             local control = window.Flags[flag]
             if control and control.Set then
-                control:Set(value, true)
+                -- Restoring the visual state alone leaves the script feature
+                -- inactive. Run the normal callback so saved toggles and other
+                -- controls actually re-apply their behavior in the new session.
+                control:Set(value, false)
             end
         end
         return true
@@ -1098,16 +1101,56 @@ local function configApi(window)
     return api
 end
 
+local function readRememberPreference(path)
+    if type(readfile) ~= "function" or type(isfile) ~= "function" or not isfile(path) then
+        return nil
+    end
+
+    local ok, value = pcall(function()
+        return HttpService:JSONDecode(readfile(path))
+    end)
+    if ok and type(value) == "boolean" then
+        return value
+    end
+    return nil
+end
+
+local function writeRememberPreference(path, enabled)
+    if type(writefile) ~= "function" then
+        return false
+    end
+
+    return pcall(function()
+        if type(makefolder) == "function"
+            and (type(isfolder) ~= "function" or not isfolder("Reverb"))
+        then
+            makefolder("Reverb")
+        end
+        writefile(path, HttpService:JSONEncode(enabled == true))
+    end)
+end
+
 function Library:CreateWindow(options)
     options = options or {}
     local index = #self.Windows + 1
+    local configName = tostring(options.ConfigName or options.Game or options.Title or "script")
+        :gsub("[^%w_-]", "_")
+    local configPath = "Reverb/" .. configName .. "_compact.json"
+    local rememberPreferencePath = "Reverb/" .. configName .. "_remember.json"
+    local savedRememberPreference = readRememberPreference(rememberPreferencePath)
+    local hasLegacyRememberedSettings = savedRememberPreference == nil
+        and type(isfile) == "function"
+        and isfile(configPath)
     local window = {
         Tabs = {},
         Flags = {},
         SettingsDrawers = {},
-        Remember = options.RememberSettings == true,
-        ConfigPath = "Reverb/" .. tostring(options.ConfigName or options.Game or options.Title or "script")
-            :gsub("[^%w_-]", "_") .. "_compact.json",
+        RememberControls = {},
+        Remember = savedRememberPreference == nil
+            and (options.RememberSettings == true or hasLegacyRememberedSettings)
+            or savedRememberPreference == true,
+        RememberPreferencePath = rememberPreferencePath,
+        ConfigPath = configPath,
     }
 
     local frame = create("Frame", {
@@ -1207,6 +1250,12 @@ function Library:CreateWindow(options)
 
     function window:SetRememberSettings(enabled)
         self.Remember = enabled == true
+        writeRememberPreference(self.RememberPreferencePath, self.Remember)
+        for _, control in ipairs(self.RememberControls) do
+            if control.Value ~= self.Remember then
+                control:Set(self.Remember, true)
+            end
+        end
         if self.Remember then
             self.Config:Load()
         end
@@ -1453,6 +1502,10 @@ function Library:CreateWindow(options)
         end
 
         function tab:Toggle(text, default, callback, flag)
+            local isRememberControl = tostring(text or ""):lower() == "remember active settings"
+            if isRememberControl then
+                default = window.Remember
+            end
             local row = controlRow(self.Container)
             create("TextLabel", {
                 BackgroundTransparency = 1,
@@ -1506,7 +1559,12 @@ function Library:CreateWindow(options)
                 control:Set(not control.Value)
             end)
             control:Set(control.Value, true)
-            return registerControl(control, flag)
+            if isRememberControl then
+                table.insert(window.RememberControls, control)
+            else
+                registerControl(control, flag)
+            end
+            return control
         end
 
         function tab:SettingsToggle(text, default, callback, flag)
